@@ -18,13 +18,6 @@ def render_hero(routes: RouteData) -> None:
     )
 
 
-def render_summary(routes: RouteData) -> None:
-    summary_cols = st.columns(3)
-    summary_cols[0].metric("Route segments", f"{routes.total_routes:,}")
-    summary_cols[1].metric("Total miles", f"{routes.total_miles:,.1f}")
-    summary_cols[2].metric("First record", f"{routes.first_year}")
-
-
 def render_map(routes: RouteData) -> None:
     """Uses the Folium Timeline plugin."""
 
