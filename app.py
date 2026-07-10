@@ -202,7 +202,7 @@ def render_map(routes: RouteData) -> None:
         date_options="MMM D, YYYY",
     ).add_timelines(timeline).add_to(map_object)
 
-    st.html(map_object.get_root().render())
+    st.iframe(map_object.get_root().render(), width="stretch", height=720)
 
 
 def render_yearly_miles(routes: RouteData) -> None:
