@@ -1,15 +1,6 @@
 import streamlit as st
 
-from bike_routes.data import load_routes
-from bike_routes.views import (
-    render_cumulative_miles,
-    render_data_preview,
-    render_hero,
-    render_map,
-    render_mayors,
-    render_summary,
-    render_yearly_miles,
-)
+from bike_routes.views import render_hero
 
 st.set_page_config(
     page_title="NYC Bike Routes Over Time",
@@ -21,35 +12,18 @@ st.set_page_config(
 def main() -> None:
     render_hero()
 
-    routes = load_routes()
-    render_summary(routes)
-
-    tabs = st.tabs(["Map", "Miles", "Mayors", "Data"])
-
-    with tabs[0]:
-        st.subheader("Bike network over time")
-        render_map(routes)
-
-    with tabs[1]:
-        st.subheader("Miles added by year")
-        st.markdown(
-            "Route length is measured in the [EPSG:2263 coordinate system](https://epsg.io/2263) and converted from feet to miles."
-        )
-        render_yearly_miles(routes)
-
-        st.subheader("Network miles by year")
-        render_cumulative_miles(routes)
-
-    with tabs[2]:
-        st.subheader("Mayoral administrations")
-        st.markdown(
-            "This compares route miles that were installed during each administration window. Mayor information from [Wikidata](https://www.wikidata.org/)."
-        )
-        render_mayors(routes)
-
-    with tabs[3]:
-        st.subheader("Source data preview")
-        render_data_preview(routes)
+    page = st.navigation(
+        [
+            st.Page("app_pages/home.py", title="Map", icon=":material/map:"),
+            st.Page("app_pages/miles.py", title="Miles", icon=":material/show_chart:"),
+            st.Page(
+                "app_pages/mayors.py", title="Mayors", icon=":material/account_balance:"
+            ),
+            st.Page("app_pages/data.py", title="Data", icon=":material/table_view:"),
+        ],
+        position="top",
+    )
+    page.run()
 
 
 if __name__ == "__main__":
