@@ -64,6 +64,7 @@ def render_map(routes: RouteData) -> None:
             """
         ),
     ).add_to(map_object)
+
     TimelineSlider(
         auto_play=True,
         show_ticks=True,
@@ -71,11 +72,44 @@ def render_map(routes: RouteData) -> None:
         date_options="MMM D, YYYY",
     ).add_timelines(timeline).add_to(map_object)
 
+    root = map_object.get_root()
+    root.html.add_child(
+        Element(
+            """
+            <div class="legend">
+                <div style="font-weight: bold; margin-bottom: 0.5rem;">Type</div>
+                <div><span style="color: #429058;">&#9632;</span> Protected</div>
+                <div><span style="color: #53b5e9;">&#9632;</span> Conventional</div>
+                <div><span style="color: #a864a3;">&#9632;</span> Shared lane / signed route</div>
+                <div><span style="color: #acce67;">&#9632;</span> Link</div>
+            </div>
+            """
+        )
+    )
+
     # make the date larger
-    map_object.get_root().header.add_child(
+    root.header.add_child(
         Element(
             """
             <style>
+                .legend {
+                    position: fixed;
+                    top: 2rem;
+                    right: 2rem;
+                    z-index: 9999;
+                    background: rgba(255, 255, 255, 0.95);
+                    border: 1px solid #d1d5db;
+                    border-radius: 8px;
+                    padding: 0.75rem;
+                    font-size: 1.4rem;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                    line-height: 1.5rem;
+
+                    span {
+                        font-size: 2rem;
+                    }
+                }
+
                 .leaflet-timeline-control .time-text {
                     font-size: 2rem;
                     font-weight: bold;
