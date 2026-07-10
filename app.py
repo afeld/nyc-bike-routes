@@ -101,8 +101,18 @@ def load_routes() -> RouteData:
 
 
 @st.cache_data
-def load_mayors(earliest: pd.Timestamp) -> pd.DataFrame:
+def load_mayors(
+    earliest: pd.Timestamp, dataset_last_updated: pd.Timestamp | None
+) -> pd.DataFrame:
     earliest_str = earliest.strftime("%Y-%m-%dT%H:%M:%SZ")
+    if pd.notna(dataset_last_updated):
+        latest_str = dataset_last_updated.strftime("%Y-%m-%dT%H:%M:%SZ")
+        latest_start_filter = (
+            f'&& (!BOUND(?start_date) || ?start_date <= "{latest_str}"^^xsd:dateTime)'
+        )
+    else:
+        latest_start_filter = ""
+
     query = dedent(
         f"""
         PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -115,8 +125,11 @@ def load_mayors(earliest: pd.Timestamp) -> pd.DataFrame:
           OPTIONAL {{ ?statement pq:P582 ?end_date. }}
           SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
           FILTER (
-            (BOUND(?start_date) && ?start_date >= "{earliest_str}"^^xsd:dateTime)
-            || (BOUND(?end_date) && ?end_date >= "{earliest_str}"^^xsd:dateTime)
+                        (
+                            (BOUND(?start_date) && ?start_date >= "{earliest_str}"^^xsd:dateTime)
+                            || (BOUND(?end_date) && ?end_date >= "{earliest_str}"^^xsd:dateTime)
+                        )
+                        {latest_start_filter}
           )
         }}
         ORDER BY ?start_date
@@ -265,13 +278,17 @@ def render_cumulative_miles(routes: RouteData) -> None:
 
 def render_mayors(routes: RouteData) -> None:
     try:
-        mayor_df = load_mayors(routes.earliest)
+        mayor_df = load_mayors(routes.earliest, routes.dataset_last_updated)
     except Exception as exc:  # pragma: no cover - external network dependency
         st.warning(f"Could not load mayor data from Wikidata: {exc}")
         return
 
     if mayor_df.empty:
         st.info("No mayor data was returned from Wikidata.")
+        return
+
+    if mayor_df.empty:
+        st.info("No mayor data overlaps the dataset time range.")
         return
 
     mayor_df["miles_installed"] = mayor_df.apply(
