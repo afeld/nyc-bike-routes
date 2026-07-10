@@ -2,6 +2,7 @@ import folium
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from branca.element import Element
 from folium.plugins.timeline import Timeline, TimelineSlider
 
 from bike_routes.data import load_mayors
@@ -40,6 +41,20 @@ def render_map(routes: RouteData) -> None:
         enable_keyboard_controls=True,
         date_options="MMM D, YYYY",
     ).add_timelines(timeline).add_to(map_object)
+
+    # make the date larger
+    map_object.get_root().header.add_child(
+        Element(
+            """
+            <style>
+                .leaflet-timeline-control .time-text {
+                    font-size: 2rem;
+                    font-weight: bold;
+                }
+            </style>
+            """
+        )
+    )
 
     st.iframe(map_object.get_root().render(), width="stretch", height=720)
 
