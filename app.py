@@ -14,8 +14,9 @@ from geopandas import GeoDataFrame
 DATA_URL = (
     "https://data.cityofnewyork.us/api/views/mzxg-pwib/rows.geojson?accessType=DOWNLOAD"
 )
+DATASET_METADATA_URL = "https://data.cityofnewyork.us/api/views/mzxg-pwib.json"
 WIKIDATA_URL = "https://query.wikidata.org/sparql"
-DATE_COLUMNS = [":created_at", "ret_date", "instdate", ":updated_at"]
+DATE_COLUMNS = [":created_at", "ret_date", "instdate"]
 
 
 @dataclass
@@ -27,6 +28,7 @@ class RouteData:
     center_lon: float
     earliest: pd.Timestamp
     latest: pd.Timestamp
+    dataset_last_updated: pd.Timestamp
 
 
 st.set_page_config(
@@ -48,6 +50,10 @@ def load_routes() -> RouteData:
     response.raise_for_status()
     geojson = response.json()
 
+    metadata_response = httpx.get(DATASET_METADATA_URL, timeout=20.0)
+    metadata_response.raise_for_status()
+    metadata = metadata_response.json()
+
     raw = GeoDataFrame.from_features(geojson["features"], crs="EPSG:4326")
 
     temporal = raw.copy()
@@ -60,6 +66,18 @@ def load_routes() -> RouteData:
 
     temporal["instdate"] = remove_timezone(temporal["instdate"])
     temporal["ret_date"] = remove_timezone(temporal["ret_date"])
+
+    metadata_updated_unix = metadata.get("rowsUpdatedAt") or metadata.get(
+        "viewLastModified"
+    )
+    dataset_last_updated = pd.to_datetime(
+        metadata_updated_unix,
+        unit="s",
+        errors="coerce",
+        utc=True,
+    )
+    if pd.notna(dataset_last_updated):
+        dataset_last_updated = dataset_last_updated.tz_convert(None)
 
     earliest = pd.concat([temporal["instdate"], temporal["ret_date"]]).min()
     latest = pd.concat([temporal["instdate"], temporal["ret_date"]]).max()
@@ -78,6 +96,7 @@ def load_routes() -> RouteData:
         center_lon=center.x,
         earliest=earliest,
         latest=latest,
+        dataset_last_updated=dataset_last_updated,
     )
 
 
@@ -170,12 +189,17 @@ def render_summary(routes: RouteData) -> None:
     total_miles = routes.temporal["length_miles"].sum()
     first_year = int(routes.earliest.year)
     latest_year = int(routes.latest.year)
+    if pd.isna(routes.dataset_last_updated):
+        last_updated = "Unknown"
+    else:
+        last_updated = routes.dataset_last_updated.strftime("%Y-%m-%d")
 
-    summary_cols = st.columns(4)
+    summary_cols = st.columns(5)
     summary_cols[0].metric("Route segments", f"{total_routes:,}")
     summary_cols[1].metric("Total miles", f"{total_miles:,.1f}")
     summary_cols[2].metric("First record", f"{first_year}")
     summary_cols[3].metric("Latest record", f"{latest_year}")
+    summary_cols[4].metric("Dataset updated", last_updated)
 
 
 def render_map(routes: RouteData) -> None:
