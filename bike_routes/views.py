@@ -146,17 +146,64 @@ def render_yearly_miles(routes: RouteData) -> None:
 
 def render_cumulative_miles(routes: RouteData) -> None:
     year_starts = pd.date_range(routes.earliest, routes.latest, freq="YS")
-    miles = [routes.miles_in_year(start.year) for start in year_starts]
+    facility_labels = {
+        "I": "Protected (I)",
+        "II": "Conventional (II)",
+        "III": "Shared lane / signed route (III)",
+        "L": "Link (L)",
+    }
+    records = []
+    for start in year_starts:
+        cutoff = pd.Timestamp(year=start.year, month=1, day=1)
+        was_previously_installed = routes.temporal["instdate"] < cutoff
+        still_exists = routes.temporal["ret_date"].isna() | (
+            routes.temporal["ret_date"] >= cutoff
+        )
+        miles_by_facility = (
+            routes.temporal.loc[was_previously_installed & still_exists]
+            .groupby("facilitycl")["length_miles"]
+            .sum()
+        )
 
-    cumulative_figure = px.line(
-        x=year_starts,
-        y=miles,
-        markers=True,
+        for facilitycl, miles in miles_by_facility.items():
+            facility_code = str(facilitycl).strip().upper()
+            records.append(
+                {
+                    "year": start,
+                    "facilitycl": facility_labels.get(
+                        facility_code, f"Other ({facility_code})"
+                    ),
+                    "miles": miles,
+                }
+            )
+
+    cumulative_df = pd.DataFrame.from_records(records)
+    cumulative_figure = px.area(
+        cumulative_df,
+        x="year",
+        y="miles",
+        color="facilitycl",
+        category_orders={
+            "facilitycl": [
+                facility_labels["I"],
+                facility_labels["II"],
+                facility_labels["III"],
+                facility_labels["L"],
+            ]
+        },
         labels={
-            "x": "Year",
-            "y": "Miles",
+            "year": "Year",
+            "miles": "Miles",
+            "facilitycl": "Facility class",
+        },
+        color_discrete_map={
+            facility_labels["I"]: "#429058",
+            facility_labels["II"]: "#53b5e9",
+            facility_labels["III"]: "#a864a3",
+            facility_labels["L"]: "#acce67",
         },
     )
+
     st.plotly_chart(cumulative_figure, width="stretch")
 
 
