@@ -133,7 +133,6 @@ class MayorRepository:
                 {latest_start_filter}
               )
             }}
-            ORDER BY ?start_date
             """
         ).strip()
 

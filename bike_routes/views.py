@@ -111,11 +111,11 @@ def render_mayors(routes: RouteData) -> None:
     try:
         mayor_df = load_mayors(routes.earliest, routes.dataset_last_updated)
     except Exception as exc:  # pragma: no cover - external network dependency
-        st.warning(f"Could not load mayor data from Wikidata: {exc}")
+        st.warning(f"Could not load mayor data: {exc}")
         return
 
     if mayor_df.empty:
-        st.info("No mayor data was returned from Wikidata.")
+        st.info("No mayor data was returned.")
         return
 
     mayor_df["miles_installed"] = mayor_df.apply(
@@ -123,19 +123,16 @@ def render_mayors(routes: RouteData) -> None:
         axis=1,
     )
 
-    chart_figure = px.bar(
+    st.bar_chart(
         mayor_df,
-        x="miles_installed",
-        y="full_name",
-        orientation="h",
+        x="full_name",
+        y="miles_installed",
+        horizontal=True,
         height=800,
-        labels={
-            "full_name": "Mayor (most recet first)",
-            "miles_installed": "Miles installed",
-        },
+        x_label="Mayor (most recent first)",
+        y_label="Miles installed",
+        sort="-start_date",
     )
-    chart_figure.update_layout(xaxis_tickangle=-35)
-    st.plotly_chart(chart_figure, width="stretch")
 
     st.subheader("Top installers")
 
