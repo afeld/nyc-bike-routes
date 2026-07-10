@@ -125,10 +125,12 @@ def render_mayors(routes: RouteData) -> None:
 
     chart_figure = px.bar(
         mayor_df,
-        x="full_name",
-        y="miles_installed",
+        x="miles_installed",
+        y="full_name",
+        orientation="h",
+        height=800,
         labels={
-            "full_name": "Mayor (chronological order)",
+            "full_name": "Mayor (most recet first)",
             "miles_installed": "Miles installed",
         },
     )
