@@ -8,6 +8,54 @@ from folium.plugins.timeline import Timeline, TimelineSlider
 from bike_routes.data import load_mayors
 from bike_routes.domain import RouteData
 
+FACILITY_ORDER = ["I", "II", "III", "L"]
+# names come from the data dictionary:
+# https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data
+# colors come from the official map:
+# https://www.nyc.gov/html/dot/html/bicyclists/bikemaps.shtml
+FACILITY_STYLE = {
+    "I": {
+        "name": "Protected",
+        "color": "#429058",
+    },
+    "II": {
+        "name": "Conventional",
+        "color": "#53b5e9",
+    },
+    "III": {
+        "name": "Shared lane / signed route",
+        "color": "#a864a3",
+    },
+    "L": {
+        "name": "Link",
+        "color": "#acce67",
+    },
+}
+DEFAULT_FACILITY_COLOR = "#6b7280"
+
+
+def enrich_facility_columns(df: pd.DataFrame) -> pd.DataFrame:
+    enriched_df = df.copy()
+    enriched_df["facilitycl_code"] = (
+        enriched_df["facilitycl"].fillna("").astype(str).str.strip().str.upper()
+    )
+    enriched_df["facilitycl_name"] = enriched_df["facilitycl_code"].map(
+        lambda code: FACILITY_STYLE.get(code, {"name": "Other"})["name"]
+    )
+    enriched_df["facilitycl_label"] = enriched_df["facilitycl_code"].map(
+        lambda code: (
+            f"{FACILITY_STYLE[code]['name']} ({code})"
+            if code in FACILITY_STYLE
+            else f"Other ({code})"
+        )
+    )
+    enriched_df["facilitycl_color"] = enriched_df["facilitycl_code"].map(
+        lambda code: FACILITY_STYLE.get(code, {"color": DEFAULT_FACILITY_COLOR})[
+            "color"
+        ]
+    )
+    return enriched_df
+
 
 def render_hero() -> None:
     st.markdown(
@@ -25,6 +73,7 @@ def render_map(routes: RouteData) -> None:
     timeline_df = routes.temporal[
         ["geometry", "instdate", "ret_date", "facilitycl"]
     ].copy()
+    timeline_df = enrich_facility_columns(timeline_df)
     timeline_df = timeline_df.rename(columns={"instdate": "start", "ret_date": "end"})
     timeline_df["end"] = timeline_df["end"].fillna(routes.latest)
     timeline_df["start"] = timeline_df["start"].dt.strftime("%Y-%m-%d")
@@ -43,20 +92,8 @@ def render_map(routes: RouteData) -> None:
         style=folium.JsCode(
             """
             (feature) => {
-                const facility = String(feature.properties.facilitycl || "").trim().toUpperCase();
-                const colors = {
-                    // protected
-                    I: "#429058",
-                    // conventional
-                    II: "#53b5e9",
-                    // shared lane or signed route
-                    III: "#a864a3",
-                    // link
-                    L: "#acce67"
-                };
-
                 return {
-                    color: colors[facility] || "#6b7280",
+                    color: feature.properties.facilitycl_color || "#6b7280",
                     weight: 3,
                     opacity: 0.9
                 };
@@ -75,15 +112,16 @@ def render_map(routes: RouteData) -> None:
     root = map_object.get_root()
     root.html.add_child(
         Element(
-            """
-            <div class="legend">
-                <div style="font-weight: bold; margin-bottom: 0.5rem;">Type</div>
-                <div><span style="color: #429058;">&#9632;</span> Protected</div>
-                <div><span style="color: #53b5e9;">&#9632;</span> Conventional</div>
-                <div><span style="color: #a864a3;">&#9632;</span> Shared lane / signed route</div>
-                <div><span style="color: #acce67;">&#9632;</span> Link</div>
-            </div>
-            """
+            (
+                '<div class="legend">'
+                '<div style="font-weight: bold; margin-bottom: 0.5rem;">Type</div>'
+                + "".join(
+                    f'<div><span style="color: {FACILITY_STYLE[facility_code]["color"]};">&#9632;</span> '
+                    f"{FACILITY_STYLE[facility_code]['name']} ({facility_code})</div>"
+                    for facility_code in FACILITY_ORDER
+                )
+                + "</div>"
+            )
         )
     )
 
@@ -146,62 +184,63 @@ def render_yearly_miles(routes: RouteData) -> None:
 
 def render_cumulative_miles(routes: RouteData) -> None:
     year_starts = pd.date_range(routes.earliest, routes.latest, freq="YS")
-    facility_labels = {
-        "I": "Protected (I)",
-        "II": "Conventional (II)",
-        "III": "Shared lane / signed route (III)",
-        "L": "Link (L)",
-    }
+    temporal_df = enrich_facility_columns(routes.temporal)
     records = []
     for start in year_starts:
         cutoff = pd.Timestamp(year=start.year, month=1, day=1)
-        was_previously_installed = routes.temporal["instdate"] < cutoff
-        still_exists = routes.temporal["ret_date"].isna() | (
-            routes.temporal["ret_date"] >= cutoff
+        was_previously_installed = temporal_df["instdate"] < cutoff
+        still_exists = temporal_df["ret_date"].isna() | (
+            temporal_df["ret_date"] >= cutoff
         )
         miles_by_facility = (
-            routes.temporal.loc[was_previously_installed & still_exists]
-            .groupby("facilitycl")["length_miles"]
+            temporal_df.loc[was_previously_installed & still_exists]
+            .groupby(["facilitycl_code", "facilitycl_label", "facilitycl_color"])[
+                ["length_miles"]
+            ]
             .sum()
+            .reset_index()
         )
 
-        for facilitycl, miles in miles_by_facility.items():
-            facility_code = str(facilitycl).strip().upper()
+        for row in miles_by_facility.itertuples(index=False):
             records.append(
                 {
                     "year": start,
-                    "facilitycl": facility_labels.get(
-                        facility_code, f"Other ({facility_code})"
-                    ),
-                    "miles": miles,
+                    "facilitycl": row.facilitycl_label,
+                    "facilitycl_code": row.facilitycl_code,
+                    "facilitycl_color": row.facilitycl_color,
+                    "miles": row.length_miles,
                 }
             )
 
     cumulative_df = pd.DataFrame.from_records(records)
+    facility_category_order = [
+        f"{FACILITY_STYLE[facility_code]['name']} ({facility_code})"
+        for facility_code in FACILITY_ORDER
+    ]
+    other_labels = sorted(
+        label
+        for label in cumulative_df["facilitycl"].unique()
+        if label not in facility_category_order
+    )
+    color_discrete_map = {
+        row["facilitycl"]: row["facilitycl_color"]
+        for _, row in cumulative_df[["facilitycl", "facilitycl_color"]]
+        .drop_duplicates()
+        .iterrows()
+    }
+
     cumulative_figure = px.area(
         cumulative_df,
         x="year",
         y="miles",
         color="facilitycl",
-        category_orders={
-            "facilitycl": [
-                facility_labels["I"],
-                facility_labels["II"],
-                facility_labels["III"],
-                facility_labels["L"],
-            ]
-        },
+        category_orders={"facilitycl": facility_category_order + other_labels},
         labels={
             "year": "Year",
             "miles": "Miles",
             "facilitycl": "Facility class",
         },
-        color_discrete_map={
-            facility_labels["I"]: "#429058",
-            facility_labels["II"]: "#53b5e9",
-            facility_labels["III"]: "#a864a3",
-            facility_labels["L"]: "#acce67",
-        },
+        color_discrete_map=color_discrete_map,
     )
 
     st.plotly_chart(cumulative_figure, width="stretch")
