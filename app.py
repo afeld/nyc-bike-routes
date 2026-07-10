@@ -157,13 +157,11 @@ def miles_during_administration(routes: GeoDataFrame, row: pd.Series) -> float:
 
 def render_hero() -> None:
     st.markdown(
+        """\
+        # NYC bike routes over time
+
+        Explore how the protected and signed bike network grew, where it clustered, and how route additions lined up with mayoral administrations.
         """
-        <div class="hero">
-            <h1>NYC bike routes over time</h1>
-            <p>Explore how the protected and signed bike network grew, where it clustered, and how route additions lined up with mayoral administrations.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
     )
 
 
@@ -181,6 +179,9 @@ def render_summary(routes: RouteData) -> None:
 
 
 def render_map(routes: RouteData) -> None:
+    """Uses the [Folium Timeline plugin](https://python-visualization.github.io/folium/latest/user_guide/plugins/timeline.html)."""
+
+    # Timeline needs every feature to have an `end`` date, so open-ended segments use the latest recorded date.
     timeline_df = routes.temporal.loc[:, ["geometry", "instdate", "ret_date"]].copy()
     timeline_df = timeline_df.rename(columns={"instdate": "start", "ret_date": "end"})
     timeline_df["end"] = timeline_df["end"].fillna(routes.latest)
@@ -242,6 +243,8 @@ def render_cumulative_miles(routes: RouteData) -> None:
 
 
 def render_mayors(routes: RouteData) -> None:
+    st.markdown("Uses [Wikidata](https://www.wikidata.org/).")
+
     try:
         mayor_df = load_mayors(routes.earliest)
     except Exception as exc:  # pragma: no cover - external network dependency
@@ -301,16 +304,13 @@ def main() -> None:
     tabs = st.tabs(["Map", "Miles", "Mayors", "Data"])
 
     with tabs[0]:
-        st.subheader("Animated map")
-        st.caption(
-            "Uses the Folium Timeline plugin and fills open-ended segments through the latest recorded date."
-        )
+        st.subheader("Bike network over time")
         render_map(routes)
 
     with tabs[1]:
         st.subheader("Miles over time")
         st.caption(
-            "Route length is measured in EPSG:2263 and converted from feet to miles."
+            "Route length is measured in the [EPSG:2263 coordinate system](https://epsg.io/2263) and converted from feet to miles."
         )
         render_yearly_miles(routes)
         st.divider()
