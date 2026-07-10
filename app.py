@@ -1,5 +1,6 @@
 import streamlit as st
 
+from bike_routes.data import load_routes
 from bike_routes.views import render_hero
 
 st.set_page_config(
@@ -10,7 +11,8 @@ st.set_page_config(
 
 
 def main() -> None:
-    render_hero()
+    routes = load_routes()
+    render_hero(routes)
 
     page = st.navigation(
         [

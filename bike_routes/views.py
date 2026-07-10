@@ -8,23 +8,21 @@ from bike_routes.data import load_mayors
 from bike_routes.domain import RouteData
 
 
-def render_hero() -> None:
+def render_hero(routes: RouteData) -> None:
     st.markdown(
-        """\
+        f"""\
         # NYC bike routes over time
 
-        Explore how the NYC bicycle network changed over time. Uses [Bike Routes from NYC Open Data](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data).
+        Explore how the NYC bicycle network changed over time. Uses [Bike Routes from NYC Open Data](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data). Dataset updated {routes.formatted_last_updated}.
         """
     )
 
 
 def render_summary(routes: RouteData) -> None:
-    summary_cols = st.columns(5)
+    summary_cols = st.columns(3)
     summary_cols[0].metric("Route segments", f"{routes.total_routes:,}")
     summary_cols[1].metric("Total miles", f"{routes.total_miles:,.1f}")
     summary_cols[2].metric("First record", f"{routes.first_year}")
-    summary_cols[3].metric("Latest record", f"{routes.latest_year}")
-    summary_cols[4].metric("Dataset updated", routes.formatted_last_updated)
 
 
 def render_map(routes: RouteData) -> None:
@@ -44,7 +42,7 @@ def render_map(routes: RouteData) -> None:
 
     timeline = Timeline(timeline_df).add_to(map_object)  # type: ignore[arg-type]
     TimelineSlider(
-        auto_play=False,
+        auto_play=True,
         show_ticks=True,
         enable_keyboard_controls=True,
         date_options="MMM D, YYYY",
