@@ -11,4 +11,10 @@
    uv sync
    ```
 
-1. Open [the notebook](nyc_bike_routes_over_time.ipynb).
+1. Run the Streamlit app.
+
+   ```sh
+   uv run streamlit run app.py
+   ```
+
+1. Open [the notebook](nyc_bike_routes_over_time.ipynb) for the original analysis workflow.

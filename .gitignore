@@ -1,1 +1,6 @@
+__pycache__/
+.mypy_cache/
 .venv/
+
+# Streamlit agent skills (environment-specific symlinks)
+.agents/skills/developing-with-streamlit
