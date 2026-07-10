@@ -12,7 +12,7 @@ st.set_page_config(
 
 def main() -> None:
     routes = load_routes()
-    render_hero(routes)
+    render_hero()
 
     page = st.navigation(
         [
@@ -29,7 +29,7 @@ def main() -> None:
 
     st.space("medium")
     st.markdown(
-        "Created by [Aidan Feldman](https://api.afeld.me).",
+        f"Uses [Bike Routes from NYC Open Data](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data). [General NYC bike map info.](https://www.nyc.gov/html/dot/html/bicyclists/bikemaps.shtml) Dataset updated {routes.formatted_last_updated}. App created by [Aidan Feldman](https://api.afeld.me).",
         text_alignment="center",
     )
 

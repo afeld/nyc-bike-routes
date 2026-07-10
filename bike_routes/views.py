@@ -9,12 +9,12 @@ from bike_routes.data import load_mayors
 from bike_routes.domain import RouteData
 
 
-def render_hero(routes: RouteData) -> None:
+def render_hero() -> None:
     st.markdown(
-        f"""\
+        """\
         # NYC bike routes over time
 
-        Explore how the NYC bicycle network changed over time. Uses [Bike Routes from NYC Open Data](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data). Dataset updated {routes.formatted_last_updated}.
+        Explore how the NYC bicycle network has changed over time.
         """
     )
 
@@ -22,7 +22,9 @@ def render_hero(routes: RouteData) -> None:
 def render_map(routes: RouteData) -> None:
     """Uses the Folium Timeline plugin."""
 
-    timeline_df = routes.temporal.loc[:, ["geometry", "instdate", "ret_date"]].copy()
+    timeline_df = routes.temporal[
+        ["geometry", "instdate", "ret_date", "facilitycl"]
+    ].copy()
     timeline_df = timeline_df.rename(columns={"instdate": "start", "ret_date": "end"})
     timeline_df["end"] = timeline_df["end"].fillna(routes.latest)
     timeline_df["start"] = timeline_df["start"].dt.strftime("%Y-%m-%d")
@@ -34,7 +36,34 @@ def render_map(routes: RouteData) -> None:
         tiles="CartoDB positron",
     )
 
-    timeline = Timeline(timeline_df).add_to(map_object)  # type: ignore[arg-type]
+    timeline = Timeline(
+        timeline_df,
+        # match the colors from the map
+        # https://www.nyc.gov/html/dot/html/bicyclists/bikemaps.shtml
+        style=folium.JsCode(
+            """
+            (feature) => {
+                const facility = String(feature.properties.facilitycl || "").trim().toUpperCase();
+                const colors = {
+                    // protected
+                    I: "#429058",
+                    // conventional
+                    II: "#53b5e9",
+                    // shared lane or signed route
+                    III: "#a864a3",
+                    // link
+                    L: "#acce67"
+                };
+
+                return {
+                    color: colors[facility] || "#6b7280",
+                    weight: 3,
+                    opacity: 0.9
+                };
+            }
+            """
+        ),
+    ).add_to(map_object)
     TimelineSlider(
         auto_play=True,
         show_ticks=True,
