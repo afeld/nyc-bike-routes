@@ -160,7 +160,7 @@ def render_hero() -> None:
         """\
         # NYC bike routes over time
 
-        Explore how the protected and signed bike network grew, where it clustered, and how route additions lined up with mayoral administrations.
+        Explore how the NYC bicycle network changed over time. Uses [Bike Routes from NYC Open Data](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data).
         """
     )
 
@@ -189,7 +189,6 @@ def render_map(routes: RouteData) -> None:
     timeline_df["end"] = timeline_df["end"].dt.strftime("%Y-%m-%d")
 
     map_object = folium.Map(
-        title="NYC bike routes over time",
         location=[routes.center_lat, routes.center_lon],
         zoom_start=10,
         tiles="CartoDB positron",
@@ -220,7 +219,6 @@ def render_yearly_miles(routes: RouteData) -> None:
         x="year",
         y="length_miles",
         markers=True,
-        title="Miles of bike routes added per year",
         labels={"year": "Year", "length_miles": "Miles added"},
     )
     figure.update_layout(margin=dict(l=20, r=20, t=60, b=20))
@@ -235,7 +233,6 @@ def render_cumulative_miles(routes: RouteData) -> None:
         x=year_starts,
         y=miles,
         markers=True,
-        title="Cumulative miles of bike routes over time",
         labels={"x": "Year", "y": "Cumulative miles of bike routes"},
     )
     cumulative_figure.update_layout(margin=dict(l=20, r=20, t=60, b=20))
@@ -243,8 +240,6 @@ def render_cumulative_miles(routes: RouteData) -> None:
 
 
 def render_mayors(routes: RouteData) -> None:
-    st.markdown("Uses [Wikidata](https://www.wikidata.org/).")
-
     try:
         mayor_df = load_mayors(routes.earliest)
     except Exception as exc:  # pragma: no cover - external network dependency
@@ -267,7 +262,6 @@ def render_mayors(routes: RouteData) -> None:
         mayor_df,
         x="full_name",
         y="miles_installed",
-        title="Miles of bike routes installed by mayoral administration",
         labels={"full_name": "Mayor", "miles_installed": "Miles installed"},
     )
     chart_figure.update_layout(margin=dict(l=20, r=20, t=60, b=20), xaxis_tickangle=-35)
@@ -277,17 +271,7 @@ def render_mayors(routes: RouteData) -> None:
 
 def render_data_preview(routes: RouteData) -> None:
     st.dataframe(
-        routes.temporal[
-            [
-                ":created_at",
-                "instdate",
-                "ret_date",
-                "street",
-                "fromstreet",
-                "tostreet",
-                "length_miles",
-            ]
-        ],
+        routes.temporal,
         width="stretch",
         hide_index=True,
     )
@@ -308,19 +292,19 @@ def main() -> None:
         render_map(routes)
 
     with tabs[1]:
-        st.subheader("Miles over time")
-        st.caption(
+        st.subheader("Miles added by year")
+        st.markdown(
             "Route length is measured in the [EPSG:2263 coordinate system](https://epsg.io/2263) and converted from feet to miles."
         )
         render_yearly_miles(routes)
-        st.divider()
-        st.subheader("Cumulative miles over time")
+
+        st.subheader("Network miles by year")
         render_cumulative_miles(routes)
 
     with tabs[2]:
         st.subheader("Mayoral administrations")
-        st.caption(
-            "This compares route miles that were installed during each administration window."
+        st.markdown(
+            "This compares route miles that were installed during each administration window. Mayor information from [Wikidata](https://www.wikidata.org/)."
         )
         render_mayors(routes)
 
