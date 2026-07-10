@@ -11,5 +11,5 @@ st.markdown(
 )
 render_yearly_miles(routes)
 
-st.subheader("Network miles by year")
+st.subheader("Network size")
 render_cumulative_miles(routes)

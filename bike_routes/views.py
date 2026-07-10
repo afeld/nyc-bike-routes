@@ -73,9 +73,11 @@ def render_yearly_miles(routes: RouteData) -> None:
         x="year",
         y="length_miles",
         markers=True,
-        labels={"year": "Year", "length_miles": "Miles added"},
+        labels={
+            "year": "Year",
+            "length_miles": "Miles added",
+        },
     )
-    figure.update_layout(margin=dict(l=20, r=20, t=60, b=20))
     st.plotly_chart(figure, width="stretch")
 
 
@@ -87,9 +89,11 @@ def render_cumulative_miles(routes: RouteData) -> None:
         x=year_starts,
         y=miles,
         markers=True,
-        labels={"x": "Year", "y": "Cumulative miles of bike routes"},
+        labels={
+            "x": "Year",
+            "y": "Miles",
+        },
     )
-    cumulative_figure.update_layout(margin=dict(l=20, r=20, t=60, b=20))
     st.plotly_chart(cumulative_figure, width="stretch")
 
 
@@ -108,18 +112,33 @@ def render_mayors(routes: RouteData) -> None:
         routes.miles_during_administration,
         axis=1,
     )
-    display_df = mayor_df[
-        ["full_name", "start_date", "end_date", "miles_installed"]
-    ].sort_values("miles_installed", ascending=False)
 
     chart_figure = px.bar(
         mayor_df,
         x="full_name",
         y="miles_installed",
-        labels={"full_name": "Mayor", "miles_installed": "Miles installed"},
+        labels={
+            "full_name": "Mayor (chronological order)",
+            "miles_installed": "Miles installed",
+        },
     )
-    chart_figure.update_layout(margin=dict(l=20, r=20, t=60, b=20), xaxis_tickangle=-35)
+    chart_figure.update_layout(xaxis_tickangle=-35)
     st.plotly_chart(chart_figure, width="stretch")
+
+    st.subheader("Top installers")
+
+    display_df = (
+        mayor_df[["full_name", "start_date", "end_date", "miles_installed"]]
+        .sort_values("miles_installed", ascending=False)
+        .rename(
+            columns={
+                "full_name": "Name",
+                "start_date": "Term start",
+                "end_date": "Term end",
+                "miles_installed": "Miles of bike routes installed",
+            }
+        )
+    )
     st.dataframe(display_df.reset_index(drop=True), width="stretch", hide_index=True)
 
 
