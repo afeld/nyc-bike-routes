@@ -542,7 +542,7 @@ wheels = [
 ]
 
 [[package]]
-name = "nyc-bike-lanes"
+name = "nyc-bike-routes"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
