@@ -27,6 +27,12 @@ def main() -> None:
     )
     page.run()
 
+    st.space("medium")
+    st.markdown(
+        "Created by [Aidan Feldman](https://api.afeld.me).",
+        text_alignment="center",
+    )
+
 
 if __name__ == "__main__":
     main()
