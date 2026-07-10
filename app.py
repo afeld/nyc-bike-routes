@@ -45,7 +45,7 @@ def remove_timezone(series: pd.Series) -> pd.Series:
     return series
 
 
-def fetch_geojson(url: str, timeout: float) -> dict[str, Any]:
+def fetch_geojson(url: str, timeout=20.0) -> dict[str, Any]:
     response = httpx.get(url, timeout=timeout)
     response.raise_for_status()
     return response.json()
@@ -101,7 +101,7 @@ def get_map_center(projected: GeoDataFrame) -> tuple[float, float]:
 @st.cache_data
 def load_routes() -> RouteData:
     geojson = fetch_geojson(DATA_URL, timeout=30.0)
-    metadata = fetch_geojson(DATASET_METADATA_URL, timeout=20.0)
+    metadata = fetch_geojson(DATASET_METADATA_URL)
 
     raw = GeoDataFrame.from_features(geojson["features"], crs="EPSG:4326")
     temporal = prepare_temporal_routes(raw)
@@ -188,9 +188,7 @@ def load_mayors(
         "User-Agent": "BikeRoutes/0.0 (https://afeld.me/; aidan.feldman@gmail.com)",
     }
 
-    response = httpx.get(
-        WIKIDATA_URL, params={"query": query}, headers=headers, timeout=20.0
-    )
+    response = httpx.get(WIKIDATA_URL, params={"query": query}, headers=headers)
     response.raise_for_status()
     data = response.json()
     return normalize_mayor_results(data)
