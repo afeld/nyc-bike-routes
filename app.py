@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from textwrap import dedent
+from typing import Any
 
 import folium
 import httpx
@@ -44,29 +45,13 @@ def remove_timezone(series: pd.Series) -> pd.Series:
     return series
 
 
-@st.cache_data
-def load_routes() -> RouteData:
-    response = httpx.get(DATA_URL, timeout=30.0)
+def fetch_geojson(url: str, timeout: float) -> dict[str, Any]:
+    response = httpx.get(url, timeout=timeout)
     response.raise_for_status()
-    geojson = response.json()
+    return response.json()
 
-    metadata_response = httpx.get(DATASET_METADATA_URL, timeout=20.0)
-    metadata_response.raise_for_status()
-    metadata = metadata_response.json()
 
-    raw = GeoDataFrame.from_features(geojson["features"], crs="EPSG:4326")
-
-    temporal = raw.copy()
-    for column in DATE_COLUMNS:
-        temporal[column] = pd.to_datetime(temporal[column], errors="coerce")
-
-    projected = temporal.to_crs(epsg=2263)
-    projected["length_miles"] = projected.geometry.length / 5280
-    temporal["length_miles"] = projected["length_miles"]
-
-    temporal["instdate"] = remove_timezone(temporal["instdate"])
-    temporal["ret_date"] = remove_timezone(temporal["ret_date"])
-
+def fetch_dataset_last_updated(metadata: dict[str, Any]) -> pd.Timestamp:
     metadata_updated_unix = metadata.get("rowsUpdatedAt") or metadata.get(
         "viewLastModified"
     )
@@ -77,33 +62,69 @@ def load_routes() -> RouteData:
         utc=True,
     )
     if pd.notna(dataset_last_updated):
-        dataset_last_updated = dataset_last_updated.tz_convert(None)
+        return dataset_last_updated.tz_convert(None)
+    return dataset_last_updated
 
+
+def prepare_temporal_routes(raw: GeoDataFrame) -> GeoDataFrame:
+    temporal = raw.copy()
+    for column in DATE_COLUMNS:
+        temporal[column] = pd.to_datetime(temporal[column], errors="coerce")
+
+    temporal["instdate"] = remove_timezone(temporal["instdate"])
+    temporal["ret_date"] = remove_timezone(temporal["ret_date"])
+    return temporal
+
+
+def project_routes_with_lengths(temporal: GeoDataFrame) -> GeoDataFrame:
+    projected = temporal.to_crs(epsg=2263)
+    projected["length_miles"] = projected.geometry.length / 5280
+    temporal["length_miles"] = projected["length_miles"]
+    return projected
+
+
+def get_route_date_range(temporal: GeoDataFrame) -> tuple[pd.Timestamp, pd.Timestamp]:
     earliest = pd.concat([temporal["instdate"], temporal["ret_date"]]).min()
     latest = pd.concat([temporal["instdate"], temporal["ret_date"]]).max()
+    return earliest, latest
 
+
+def get_map_center(projected: GeoDataFrame) -> tuple[float, float]:
     projected_centroids = GeoDataFrame(
         geometry=projected.geometry.centroid,
         crs=projected.crs,
     ).to_crs(epsg=4326)
     center = projected_centroids.geometry.union_all().centroid
+    return center.y, center.x
+
+
+@st.cache_data
+def load_routes() -> RouteData:
+    geojson = fetch_geojson(DATA_URL, timeout=30.0)
+    metadata = fetch_geojson(DATASET_METADATA_URL, timeout=20.0)
+
+    raw = GeoDataFrame.from_features(geojson["features"], crs="EPSG:4326")
+    temporal = prepare_temporal_routes(raw)
+    projected = project_routes_with_lengths(temporal)
+    dataset_last_updated = fetch_dataset_last_updated(metadata)
+    earliest, latest = get_route_date_range(temporal)
+    center_lat, center_lon = get_map_center(projected)
 
     return RouteData(
         raw=raw,
         temporal=temporal,
         projected=projected,
-        center_lat=center.y,
-        center_lon=center.x,
+        center_lat=center_lat,
+        center_lon=center_lon,
         earliest=earliest,
         latest=latest,
         dataset_last_updated=dataset_last_updated,
     )
 
 
-@st.cache_data
-def load_mayors(
+def build_mayor_query(
     earliest: pd.Timestamp, dataset_last_updated: pd.Timestamp | None
-) -> pd.DataFrame:
+) -> str:
     earliest_str = earliest.strftime("%Y-%m-%dT%H:%M:%SZ")
     if pd.notna(dataset_last_updated):
         latest_str = dataset_last_updated.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -113,7 +134,7 @@ def load_mayors(
     else:
         latest_start_filter = ""
 
-    query = dedent(
+    return dedent(
         f"""
         PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
@@ -125,28 +146,19 @@ def load_mayors(
           OPTIONAL {{ ?statement pq:P582 ?end_date. }}
           SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
           FILTER (
-                        (
-                            (BOUND(?start_date) && ?start_date >= "{earliest_str}"^^xsd:dateTime)
-                            || (BOUND(?end_date) && ?end_date >= "{earliest_str}"^^xsd:dateTime)
-                        )
-                        {latest_start_filter}
+            (
+              (BOUND(?start_date) && ?start_date >= "{earliest_str}"^^xsd:dateTime)
+              || (BOUND(?end_date) && ?end_date >= "{earliest_str}"^^xsd:dateTime)
+            )
+            {latest_start_filter}
           )
         }}
         ORDER BY ?start_date
         """
     ).strip()
 
-    headers = {
-        "Accept": "application/sparql-results+json",
-        "User-Agent": "BikeRoutes/0.0 (https://afeld.me/; aidan.feldman@gmail.com)",
-    }
 
-    response = httpx.get(
-        WIKIDATA_URL, params={"query": query}, headers=headers, timeout=20.0
-    )
-    response.raise_for_status()
-    data = response.json()
-
+def normalize_mayor_results(data: dict[str, Any]) -> pd.DataFrame:
     mayor_df = pd.json_normalize(data["results"]["bindings"])
     if mayor_df.empty:
         return pd.DataFrame(
@@ -163,6 +175,25 @@ def load_mayors(
     mayor_df["start_date"] = mayor_df["start_date"].dt.tz_convert(None)
     mayor_df["end_date"] = mayor_df["end_date"].dt.tz_convert(None)
     return mayor_df
+
+
+@st.cache_data
+def load_mayors(
+    earliest: pd.Timestamp, dataset_last_updated: pd.Timestamp | None
+) -> pd.DataFrame:
+    query = build_mayor_query(earliest, dataset_last_updated)
+
+    headers = {
+        "Accept": "application/sparql-results+json",
+        "User-Agent": "BikeRoutes/0.0 (https://afeld.me/; aidan.feldman@gmail.com)",
+    }
+
+    response = httpx.get(
+        WIKIDATA_URL, params={"query": query}, headers=headers, timeout=20.0
+    )
+    response.raise_for_status()
+    data = response.json()
+    return normalize_mayor_results(data)
 
 
 def miles_in_year(routes: GeoDataFrame, year: int) -> float:
@@ -287,10 +318,6 @@ def render_mayors(routes: RouteData) -> None:
         st.info("No mayor data was returned from Wikidata.")
         return
 
-    if mayor_df.empty:
-        st.info("No mayor data overlaps the dataset time range.")
-        return
-
     mayor_df["miles_installed"] = mayor_df.apply(
         lambda row: miles_during_administration(routes.temporal, row),
         axis=1,
@@ -321,9 +348,7 @@ def render_data_preview(routes: RouteData) -> None:
 def main() -> None:
     render_hero()
 
-    with st.spinner("Loading bike route data..."):
-        routes = load_routes()
-
+    routes = load_routes()
     render_summary(routes)
 
     tabs = st.tabs(["Map", "Miles", "Mayors", "Data"])
