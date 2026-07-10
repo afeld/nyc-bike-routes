@@ -57,6 +57,49 @@ def enrich_facility_columns(df: pd.DataFrame) -> pd.DataFrame:
     return enriched_df
 
 
+def get_map_legend_html() -> str:
+    items_html = "".join(
+        f'<div><span style="color: {FACILITY_STYLE[facility_code]["color"]};">&#9632;</span> '
+        f"{FACILITY_STYLE[facility_code]['name']} ({facility_code})</div>"
+        for facility_code in FACILITY_ORDER
+    )
+    return (
+        '<div class="legend">'
+        '<div style="font-weight: bold; margin-bottom: 0.5rem;">Type</div>'
+        f"{items_html}"
+        "</div>"
+    )
+
+
+def get_map_style_html() -> str:
+    return """\
+        <style>
+            .legend {
+                position: fixed;
+                top: 2rem;
+                right: 2rem;
+                z-index: 9999;
+                background: rgba(255, 255, 255, 0.95);
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                padding: 0.75rem;
+                font-size: 1.4rem;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                line-height: 1.5rem;
+
+                span {
+                    font-size: 2rem;
+                }
+            }
+
+            .leaflet-timeline-control .time-text {
+                font-size: 2rem;
+                font-weight: bold;
+            }
+        </style>
+        """
+
+
 def render_hero() -> None:
     st.markdown(
         """\
@@ -87,8 +130,6 @@ def render_map(routes: RouteData) -> None:
 
     timeline = Timeline(
         timeline_df,
-        # match the colors from the map
-        # https://www.nyc.gov/html/dot/html/bicyclists/bikemaps.shtml
         style=folium.JsCode(
             """
             (feature) => {
@@ -110,52 +151,10 @@ def render_map(routes: RouteData) -> None:
     ).add_timelines(timeline).add_to(map_object)
 
     root = map_object.get_root()
-    root.html.add_child(
-        Element(
-            (
-                '<div class="legend">'
-                '<div style="font-weight: bold; margin-bottom: 0.5rem;">Type</div>'
-                + "".join(
-                    f'<div><span style="color: {FACILITY_STYLE[facility_code]["color"]};">&#9632;</span> '
-                    f"{FACILITY_STYLE[facility_code]['name']} ({facility_code})</div>"
-                    for facility_code in FACILITY_ORDER
-                )
-                + "</div>"
-            )
-        )
-    )
+    root.html.add_child(Element(get_map_legend_html()))
 
     # make the date larger
-    root.header.add_child(
-        Element(
-            """
-            <style>
-                .legend {
-                    position: fixed;
-                    top: 2rem;
-                    right: 2rem;
-                    z-index: 9999;
-                    background: rgba(255, 255, 255, 0.95);
-                    border: 1px solid #d1d5db;
-                    border-radius: 8px;
-                    padding: 0.75rem;
-                    font-size: 1.4rem;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-                    line-height: 1.5rem;
-
-                    span {
-                        font-size: 2rem;
-                    }
-                }
-
-                .leaflet-timeline-control .time-text {
-                    font-size: 2rem;
-                    font-weight: bold;
-                }
-            </style>
-            """
-        )
-    )
+    root.header.add_child(Element(get_map_style_html()))
 
     st.iframe(map_object.get_root().render(), width="stretch", height=720)
 
