@@ -42,7 +42,7 @@ def remove_timezone(series: pd.Series) -> pd.Series:
     return series
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data
 def load_routes() -> RouteData:
     response = httpx.get(DATA_URL, timeout=30.0)
     response.raise_for_status()
@@ -81,7 +81,7 @@ def load_routes() -> RouteData:
     )
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data
 def load_mayors(earliest: pd.Timestamp) -> pd.DataFrame:
     earliest_str = earliest.strftime("%Y-%m-%dT%H:%M:%SZ")
     query = dedent(
