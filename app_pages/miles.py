@@ -10,7 +10,3 @@ render_yearly_miles(routes)
 
 st.subheader("Network size")
 render_cumulative_miles(routes)
-
-st.markdown(
-    "Route length is measured in the [EPSG:2263 coordinate system](https://epsg.io/2263) and converted from feet to miles."
-)

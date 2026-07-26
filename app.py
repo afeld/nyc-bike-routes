@@ -1,6 +1,6 @@
 import streamlit as st
-from bike_routes.data import load_routes
 
+from bike_routes.data import load_routes
 from bike_routes.views import render_hero
 
 st.set_page_config(
@@ -28,7 +28,11 @@ def main() -> None:
 
     st.space("medium")
     st.markdown(
-        f"Uses [Bike Routes from NYC Open Data](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data). [General NYC bike map info.](https://www.nyc.gov/html/dot/html/bicyclists/bikemaps.shtml) Dataset updated {routes.formatted_last_updated}. App created by [Aidan Feldman](https://api.afeld.me).",
+        f"""\
+        Uses [Bike Routes from NYC Open Data](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data). Route length is measured in the [EPSG:2263 coordinate system](https://epsg.io/2263) and converted from feet to miles. Dataset updated {routes.formatted_last_updated}.
+
+        [General NYC bike map info.](https://www.nyc.gov/html/dot/html/bicyclists/bikemaps.shtml) App created by [Aidan Feldman](https://api.afeld.me).
+        """,
         text_alignment="center",
     )
 
