@@ -100,4 +100,4 @@ def render_map(routes: RouteData) -> None:
     # make the date larger
     root.header.add_child(Element(get_map_style_html()))
 
-    st.iframe(map_object.get_root().render(), width="stretch", height=500)
+    st.iframe(map_object.get_root().render(), height=500)

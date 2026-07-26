@@ -178,4 +178,4 @@ def render_mayors(routes: RouteData) -> None:
             }
         )
     )
-    st.dataframe(display_df.reset_index(drop=True), width="stretch", hide_index=True)
+    st.dataframe(display_df.reset_index(drop=True), hide_index=True)
