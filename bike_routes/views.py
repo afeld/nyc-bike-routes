@@ -174,7 +174,7 @@ def render_mayors(routes: RouteData) -> None:
                 "full_name": "Name",
                 "start_date": "Term start",
                 "end_date": "Term end",
-                "miles_installed": "Miles of bike routes installed",
+                "miles_installed": "Miles installed",
             }
         )
     )
