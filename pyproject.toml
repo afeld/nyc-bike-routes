@@ -9,7 +9,6 @@ dependencies = [
     "httpx>=0.28.1",
     "nbformat>=4.2.0",
     "pandas>=3.0.3",
-    "plotly>=6.9.0",
     "streamlit>=1.59.1",
 ]
 

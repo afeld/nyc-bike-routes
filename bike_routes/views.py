@@ -1,12 +1,10 @@
 import pandas as pd
-import plotly.express as px
 import streamlit as st
 
 from bike_routes.data import load_mayors
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
     FACILITY_ORDER,
-    FACILITY_STYLE,
     enrich_facility_columns,
 )
 
@@ -30,91 +28,114 @@ def render_yearly_miles(routes: RouteData) -> None:
     )
     yearly_miles["year"] = yearly_miles["instdate"].dt.year
 
-    figure = px.line(
+    st.line_chart(
         yearly_miles,
         x="year",
         y="length_miles",
-        markers=True,
-        labels={
-            "year": "Year",
-            "length_miles": "Miles added",
-        },
+        x_label="Year",
+        y_label="Miles added",
     )
-    st.plotly_chart(figure, width="stretch")
+
+
+def _miles_by_facility_at_cutoff(
+    temporal_df: pd.DataFrame,
+    cutoff: pd.Timestamp,
+) -> pd.DataFrame:
+    was_previously_installed = temporal_df["instdate"] < cutoff
+    still_exists = temporal_df["ret_date"].isna() | (temporal_df["ret_date"] >= cutoff)
+
+    return (
+        temporal_df.loc[was_previously_installed & still_exists]
+        .groupby(["facilitycl_code", "facilitycl_label", "facilitycl_color"])[
+            ["length_miles"]
+        ]
+        .sum()
+        .reset_index()
+        .rename(columns={"facilitycl_label": "facilitycl", "length_miles": "miles"})
+    )
+
+
+def _build_cumulative_miles(routes: RouteData) -> pd.DataFrame:
+    year_starts = pd.date_range(routes.earliest, routes.latest, freq="YS")
+    temporal_df = enrich_facility_columns(routes.temporal)
+
+    cumulative_frames = []
+    for start in year_starts:
+        cutoff = pd.Timestamp(year=start.year, month=1, day=1)
+        miles_by_facility = _miles_by_facility_at_cutoff(temporal_df, cutoff).assign(
+            year=start
+        )
+        cumulative_frames.append(miles_by_facility)
+
+    if not cumulative_frames:
+        return pd.DataFrame(
+            columns=[
+                "year",
+                "facilitycl",
+                "facilitycl_code",
+                "facilitycl_color",
+                "miles",
+            ]
+        )
+
+    return pd.concat(cumulative_frames, ignore_index=True)[
+        ["year", "facilitycl", "facilitycl_code", "facilitycl_color", "miles"]
+    ]
+
+
+def _ordered_facility_classes(cumulative_df: pd.DataFrame) -> list[str]:
+    facility_order_lookup = {
+        facility_code: i for i, facility_code in enumerate(FACILITY_ORDER)
+    }
+    unique_facility_classes = cumulative_df[
+        ["facilitycl", "facilitycl_code"]
+    ].drop_duplicates()
+    return unique_facility_classes.sort_values(
+        by=["facilitycl_code", "facilitycl"],
+        key=lambda series: series.map(facility_order_lookup).fillna(
+            len(FACILITY_ORDER)
+        ),
+    )["facilitycl"].tolist()
 
 
 def render_cumulative_miles(routes: RouteData) -> None:
-    year_starts = pd.date_range(routes.earliest, routes.latest, freq="YS")
-    temporal_df = enrich_facility_columns(routes.temporal)
-    records = []
-    for start in year_starts:
-        cutoff = pd.Timestamp(year=start.year, month=1, day=1)
-        was_previously_installed = temporal_df["instdate"] < cutoff
-        still_exists = temporal_df["ret_date"].isna() | (
-            temporal_df["ret_date"] >= cutoff
-        )
-        miles_by_facility = (
-            temporal_df.loc[was_previously_installed & still_exists]
-            .groupby(["facilitycl_code", "facilitycl_label", "facilitycl_color"])[
-                ["length_miles"]
-            ]
-            .sum()
-            .reset_index()
-        )
+    cumulative_df = _build_cumulative_miles(routes)
 
-        for row in miles_by_facility.itertuples(index=False):
-            records.append(
-                {
-                    "year": start,
-                    "facilitycl": row.facilitycl_label,
-                    "facilitycl_code": row.facilitycl_code,
-                    "facilitycl_color": row.facilitycl_color,
-                    "miles": row.length_miles,
-                }
-            )
+    if cumulative_df.empty:
+        st.info("No route data is available to display network size.")
+        return
 
-    cumulative_df = pd.DataFrame.from_records(records)
-    facility_category_order = [
-        f"{FACILITY_STYLE[facility_code]['name']} ({facility_code})"
-        for facility_code in FACILITY_ORDER
+    ordered_facility_classes = _ordered_facility_classes(cumulative_df)
+
+    facility_colors = (
+        cumulative_df[["facilitycl", "facilitycl_color"]]
+        .dropna(subset=["facilitycl_color"])
+        .drop_duplicates(subset=["facilitycl"])
+        .set_index("facilitycl")["facilitycl_color"]
+        .to_dict()
+    )
+    stacked_miles = (
+        cumulative_df.pivot_table(
+            index="year",
+            columns="facilitycl",
+            values="miles",
+            aggfunc="sum",
+        )
+        .reindex(columns=ordered_facility_classes)
+        .fillna(0)
+    )
+    chart_colors = [
+        facility_colors.get(facility, "gray") for facility in ordered_facility_classes
     ]
-    other_labels = sorted(
-        label
-        for label in cumulative_df["facilitycl"].unique()
-        if label not in facility_category_order
-    )
-    color_discrete_map = {
-        row["facilitycl"]: row["facilitycl_color"]
-        for _, row in cumulative_df[["facilitycl", "facilitycl_color"]]
-        .drop_duplicates()
-        .iterrows()
-    }
 
-    cumulative_figure = px.area(
-        cumulative_df,
-        x="year",
-        y="miles",
-        color="facilitycl",
-        category_orders={"facilitycl": facility_category_order + other_labels},
-        labels={
-            "year": "Year",
-            "miles": "Miles",
-            "facilitycl": "Facility class",
-        },
-        color_discrete_map=color_discrete_map,
+    st.area_chart(
+        stacked_miles,
+        y=ordered_facility_classes,
+        color=chart_colors,
+        stack=True,
+        x_label="Year",
+        y_label="Miles",
     )
-
-    # https://plotly.com/python/legend/#legend-positioning
-    cumulative_figure.update_layout(
-        legend={
-            "yanchor": "top",
-            "y": 0.95,
-            "xanchor": "left",
-            "x": 0.02,
-        }
-    )
-
-    st.plotly_chart(cumulative_figure, width="stretch")
 
 
 def render_mayors(routes: RouteData) -> None:
