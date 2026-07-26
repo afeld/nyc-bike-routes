@@ -104,6 +104,16 @@ def render_cumulative_miles(routes: RouteData) -> None:
         color_discrete_map=color_discrete_map,
     )
 
+    # https://plotly.com/python/legend/#legend-positioning
+    cumulative_figure.update_layout(
+        legend={
+            "yanchor": "top",
+            "y": 0.95,
+            "xanchor": "left",
+            "x": 0.02,
+        }
+    )
+
     st.plotly_chart(cumulative_figure, width="stretch")
 
 
