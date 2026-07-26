@@ -21,14 +21,14 @@ def render_yearly_miles(routes: RouteData) -> None:
         .reset_index()
     )
     yearly_miles["year"] = yearly_miles["instdate"].dt.year
-
-    st.line_chart(
-        yearly_miles,
-        x="year",
-        y="length_miles",
-        x_label="Year",
-        y_label="Miles added",
+    yearly_miles = yearly_miles.rename(
+        columns={
+            "year": "Year",
+            "length_miles": "Miles added",
+        }
     )
+
+    st.line_chart(yearly_miles, x="Year", y="Miles added")
 
 
 def _miles_by_facility_at_cutoff(
