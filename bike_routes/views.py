@@ -10,13 +10,7 @@ from bike_routes.facilities import (
 
 
 def render_hero() -> None:
-    st.markdown(
-        """\
-        # NYC bike routes over time
-
-        Explore how the NYC bicycle network has changed over time.
-        """
-    )
+    st.title("NYC bike routes over time")
 
 
 def render_yearly_miles(routes: RouteData) -> None:

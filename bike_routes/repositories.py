@@ -13,6 +13,7 @@ DATA_URL = (
 DATASET_METADATA_URL = "https://data.cityofnewyork.us/api/views/mzxg-pwib.json"
 WIKIDATA_URL = "https://query.wikidata.org/sparql"
 DATE_COLUMNS = [":created_at", "ret_date", "instdate"]
+MAP_SIMPLIFY_TOLERANCE_FEET = 30.0
 
 
 class RouteRepository:
@@ -58,6 +59,19 @@ class RouteRepository:
         temporal["length_miles"] = projected["length_miles"]
         return projected
 
+    def simplify_routes_for_map(
+        self,
+        projected: GeoDataFrame,
+        tolerance_feet: float = MAP_SIMPLIFY_TOLERANCE_FEET,
+    ) -> GeoDataFrame:
+        # Simplify route coordinates in projected units before converting back to WGS84.
+        simplified = projected.copy()
+        simplified["geometry"] = simplified.geometry.simplify(
+            tolerance=tolerance_feet,
+            preserve_topology=True,
+        )
+        return simplified.to_crs(epsg=4326)
+
     def get_route_date_range(
         self, temporal: GeoDataFrame
     ) -> tuple[pd.Timestamp, pd.Timestamp]:
@@ -80,6 +94,7 @@ class RouteRepository:
         raw = GeoDataFrame.from_features(geojson["features"], crs="EPSG:4326")
         temporal = self.prepare_temporal_routes(raw)
         projected = self.project_routes_with_lengths(temporal)
+        map_temporal = self.simplify_routes_for_map(projected)
         dataset_last_updated = self.fetch_dataset_last_updated(metadata)
         earliest, latest = self.get_route_date_range(temporal)
         center_lat, center_lon = self.get_map_center(projected)
@@ -87,6 +102,7 @@ class RouteRepository:
         return RouteData(
             raw=raw,
             temporal=temporal,
+            map_temporal=map_temporal,
             projected=projected,
             center_lat=center_lat,
             center_lon=center_lon,

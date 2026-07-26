@@ -57,7 +57,7 @@ def get_map_style_html() -> str:
 def render_map(routes: RouteData) -> None:
     """Uses the Folium Timeline plugin."""
 
-    timeline_df = routes.temporal[
+    timeline_df = routes.map_temporal[
         ["geometry", "instdate", "ret_date", "facilitycl"]
     ].copy()
     timeline_df = enrich_facility_columns(timeline_df)
