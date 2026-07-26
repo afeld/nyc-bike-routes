@@ -47,7 +47,7 @@ def get_map_style_html() -> str:
             }
 
             .leaflet-timeline-control .time-text {
-                font-size: 2rem;
+                font-size: 1.5rem;
                 font-weight: bold;
             }
         </style>
@@ -91,7 +91,7 @@ def render_map(routes: RouteData) -> None:
         auto_play=True,
         show_ticks=True,
         enable_keyboard_controls=True,
-        date_options="MMM D, YYYY",
+        date_options="YYYY",
     ).add_timelines(timeline).add_to(map_object)
 
     root = map_object.get_root()
@@ -100,4 +100,4 @@ def render_map(routes: RouteData) -> None:
     # make the date larger
     root.header.add_child(Element(get_map_style_html()))
 
-    st.iframe(map_object.get_root().render(), width="stretch", height=720)
+    st.iframe(map_object.get_root().render(), width="stretch", height=500)
