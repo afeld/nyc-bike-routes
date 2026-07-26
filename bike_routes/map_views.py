@@ -72,6 +72,13 @@ def render_map(routes: RouteData) -> None:
         tiles="CartoDB positron",
     )
 
+    folium.plugins.Fullscreen(
+        position="topleft",
+        title="Expand me",
+        title_cancel="Exit me",
+        force_separate_button=True,
+    ).add_to(map_object)
+
     timeline = Timeline(
         timeline_df,
         style=folium.JsCode(
