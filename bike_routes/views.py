@@ -159,11 +159,3 @@ def render_mayors(routes: RouteData) -> None:
         )
     )
     st.dataframe(display_df.reset_index(drop=True), width="stretch", hide_index=True)
-
-
-def render_data_preview(routes: RouteData) -> None:
-    st.dataframe(
-        routes.temporal,
-        width="stretch",
-        hide_index=True,
-    )

@@ -1,6 +1,6 @@
 import streamlit as st
-
 from bike_routes.data import load_routes
+
 from bike_routes.views import render_hero
 
 st.set_page_config(
@@ -21,7 +21,6 @@ def main() -> None:
             st.Page(
                 "app_pages/mayors.py", title="Mayors", icon=":material/account_balance:"
             ),
-            st.Page("app_pages/data.py", title="Data", icon=":material/table_view:"),
         ],
         position="top",
     )
