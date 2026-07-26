@@ -149,6 +149,11 @@ def render_mayors(routes: RouteData) -> None:
     display_df = (
         mayor_df[["full_name", "start_date", "end_date", "miles_installed"]]
         .sort_values("miles_installed", ascending=False)
+        .assign(
+            # years only
+            start_date=mayor_df["start_date"].dt.year,
+            end_date=mayor_df["end_date"].dt.year,
+        )
         .rename(
             columns={
                 "full_name": "Name",
