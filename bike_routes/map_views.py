@@ -27,6 +27,26 @@ def get_layer_name(facility_code: str) -> str:
     )
 
 
+def get_popup_html(properties: dict, facility_code: str, mayor: str) -> str:
+    """Details about a route, shown when it's clicked."""
+    details = {
+        "Type": (
+            f'<span style="color: {get_facility_color(facility_code)};">&#9632;</span> '
+            f"{get_facility_label(facility_code)}"
+        ),
+        "Installed": properties["instdate"][:4],
+        "Mayor": escape(mayor),
+    }
+
+    rows = "".join(
+        f"<dt>{label}</dt><dd>{value}</dd>" for label, value in details.items()
+    )
+    return (
+        f'<div class="route-popup"><strong>{escape(properties["street"])}</strong>'
+        f"<dl>{rows}</dl></div>"
+    )
+
+
 def get_bounds(map_object: folium.Map) -> TypeBounds:
     # the bounds are only missing when the map is empty
     return cast(TypeBounds, map_object.get_bounds())
@@ -41,6 +61,30 @@ def get_map_style_html() -> str:
 
                 .swatch {
                     font-size: 2rem;
+                }
+            }
+
+            .route-popup {
+                strong {
+                    display: block;
+                    margin-bottom: 0.25rem;
+                    font-size: 1.1em;
+                }
+
+                dl {
+                    display: grid;
+                    grid-template-columns: auto auto;
+                    gap: 0.1rem 0.75rem;
+                    margin: 0;
+                }
+
+                dt {
+                    color: #6b7280;
+                    font-weight: normal;
+                }
+
+                dd {
+                    margin: 0;
                 }
             }
 
@@ -108,11 +152,8 @@ def render_map(routes: RouteData) -> None:
                     "start": feature["properties"]["instdate"],
                     "end": feature["properties"]["ret_date"] or latest,
                     "facilitycl_color": get_facility_color(facility_code),
-                    "popup": (
-                        f"<strong>{escape(feature['properties']['street'])}</strong><br>"
-                        f"{get_facility_label(facility_code)}, "
-                        f"installed {feature['properties']['instdate'][:4]} "
-                        f"under {escape(mayor)}"
+                    "popup": get_popup_html(
+                        feature["properties"], facility_code, mayor
                     ),
                 },
             }
