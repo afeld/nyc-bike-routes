@@ -5,8 +5,10 @@ import folium
 import pandas as pd
 import streamlit as st
 from branca.element import Element, Figure
+from folium.elements import JSCSSMixin
 from folium.plugins import Fullscreen
 from folium.plugins.timeline import Timeline, TimelineSlider
+from folium.template import Template
 from folium.utilities import TypeBounds
 
 from bike_routes.data import get_mayor
@@ -17,6 +19,32 @@ from bike_routes.facilities import (
     get_facility_label,
     normalize_facility_code,
 )
+
+
+class Basemap(JSCSSMixin):
+    """An OpenStreetMap basemap, drawn in the browser from vector tiles, so it's sharp on high-resolution screens. The tiles are read straight from a PMTiles archive of the whole planet, which only downloads the parts that are shown."""
+
+    _template = Template(
+        """
+        {% macro script(this, kwargs) %}
+            protomapsL.leafletLayer({
+                url: "https://data.source.coop/protomaps/openstreetmap/v4.pmtiles",
+                flavor: "white",
+                lang: "en",
+                attribution: '<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+            }).addTo({{ this._parent.get_name() }});
+        {% endmacro %}
+        """
+    )
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.default_js = [
+            (
+                "protomaps-leaflet",
+                "https://cdn.jsdelivr.net/npm/protomaps-leaflet@5.1.0/dist/protomaps-leaflet.js",
+            )
+        ]
 
 
 def get_layer_name(facility_code: str) -> str:
@@ -161,8 +189,7 @@ def render_map(routes: RouteData) -> None:
 
     # allow half zoom levels, so the routes fill narrow screens rather than being zoomed out by a whole level
     map_object = folium.Map(tiles=None, zoom_snap=0.5)
-    # keep the base map out of the layer control
-    folium.TileLayer("Esri.WorldGrayCanvas", control=False).add_to(map_object)
+    Basemap().add_to(map_object)
 
     Fullscreen(
         position="topleft",
@@ -234,7 +261,7 @@ def render_features_map(features: list[dict]) -> None:
     """A static map of the given routes, zoomed to fit them."""
 
     map_object = folium.Map(tiles=None)
-    folium.TileLayer("Esri.WorldGrayCanvas").add_to(map_object)
+    Basemap().add_to(map_object)
     folium.GeoJson(
         {"type": "FeatureCollection", "features": features},
         style_function=lambda feature: {
