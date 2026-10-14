@@ -14,6 +14,7 @@ DATASET_METADATA_URL = "https://data.cityofnewyork.us/api/views/mzxg-pwib.json"
 WIKIDATA_URL = "https://query.wikidata.org/sparql"
 DATE_COLUMNS = [":created_at", "ret_date", "instdate"]
 MAP_SIMPLIFY_TOLERANCE_FEET = 30.0
+MAP_COORDINATE_PRECISION_DEGREES = 1e-5
 
 
 class RouteRepository:
@@ -76,7 +77,12 @@ class RouteRepository:
             tolerance=tolerance_feet,
             preserve_topology=True,
         )
-        return simplified.to_crs(epsg=4326)
+        simplified = simplified.to_crs(epsg=4326)
+        # Round to 5 decimal places (~1 meter), to shrink the GeoJSON embedded in the map.
+        simplified["geometry"] = simplified.geometry.set_precision(
+            MAP_COORDINATE_PRECISION_DEGREES
+        )
+        return simplified
 
     def get_route_date_range(
         self, temporal: GeoDataFrame
