@@ -7,7 +7,7 @@ from typing import Any
 
 import httpx
 import pandas as pd
-from geopandas import GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
 
 from bike_routes.repositories import (
     DATA_DIR,
@@ -60,6 +60,53 @@ def normalize_street(street: str | None) -> str:
     if words:
         words[-1] = STREET_TYPE_ABBREVIATIONS.get(words[-1], words[-1])
     return " ".join(words)
+
+
+def pair_with_retired_routes(
+    temporal: pd.DataFrame, routes: GeoSeries, retired_areas: GeoSeries
+) -> pd.DataFrame:
+    """Each route with the ones retired near it, around when it was installed. Returns the indexes of the `new` and `old` routes, and the `gap` between the installation and retirement."""
+    new_positions, old_positions = retired_areas.sindex.query(
+        routes, predicate="intersects"
+    )
+    pairs = pd.DataFrame(
+        {
+            "new": routes.index[new_positions],
+            "old": retired_areas.index[old_positions],
+        }
+    )
+    pairs["gap"] = abs(
+        temporal["instdate"].loc[pairs["new"]].values
+        - temporal["ret_date"].loc[pairs["old"]].values
+    )
+    return pairs[(pairs["new"] != pairs["old"]) & (pairs["gap"] <= REPLACEMENT_WINDOW)]
+
+
+def get_overlap(
+    routes: GeoSeries, retired_areas: GeoSeries, pairs: pd.DataFrame
+) -> pd.Series:
+    """The fraction of each new route that's covered by the retired ones it's paired with. They're combined, since they may have been split up differently."""
+    retired_nearby = (
+        GeoDataFrame(pairs[["new"]], geometry=retired_areas.loc[pairs["old"]].values)
+        .dissolve(by="new")
+        .geometry
+    )
+    new_routes = routes.loc[retired_nearby.index]
+    return new_routes.intersection(retired_nearby).length / new_routes.length
+
+
+def choose_closest(routes: GeoSeries, pairs: pd.DataFrame) -> pd.DataFrame:
+    """If multiple routes were retired around when a new one was installed, use the closest in time, then the closest in shape."""
+    distance = (
+        routes.loc[pairs["new"]]
+        .hausdorff_distance(routes.loc[pairs["old"]], align=False)
+        .values
+    )
+    return (
+        pairs.assign(distance=distance)
+        .sort_values(["gap", "distance"])
+        .drop_duplicates("new")
+    )
 
 
 class MayorRepository:
@@ -181,43 +228,12 @@ class RouteRepository:
             REPLACEMENT_DISTANCE_FEET
         )
 
-        # each route with the ones retired near it, around when it was installed
-        new_positions, old_positions = retired_areas.sindex.query(
-            routes, predicate="intersects"
-        )
-        pairs = pd.DataFrame(
-            {
-                "new": routes.index[new_positions],
-                "old": retired_areas.index[old_positions],
-            }
-        )
-        pairs["gap"] = abs(
-            temporal["instdate"].loc[pairs["new"]].values
-            - temporal["ret_date"].loc[pairs["old"]].values
-        )
-        pairs = pairs[
-            (pairs["new"] != pairs["old"]) & (pairs["gap"] <= REPLACEMENT_WINDOW)
-        ]
-
-        # skip routes that are mostly somewhere new, combining the retired ones since they may have been split up differently
-        retired_nearby = (
-            GeoDataFrame(
-                pairs[["new"]], geometry=retired_areas.loc[pairs["old"]].values
-            )
-            .dissolve(by="new")
-            .geometry
-        )
-        new_routes = routes.loc[retired_nearby.index]
-        overlap = new_routes.intersection(retired_nearby).length / new_routes.length
+        pairs = pair_with_retired_routes(temporal, routes, retired_areas)
+        overlap = get_overlap(routes, retired_areas, pairs)
+        # skip routes that are mostly somewhere new
         pairs = pairs[pairs["new"].map(overlap) >= REPLACEMENT_MIN_OVERLAP]
+        replaced = choose_closest(routes, pairs)
 
-        # if multiple were retired around then, use the closest in time, then the closest in shape
-        pairs["distance"] = (
-            routes.loc[pairs["new"]]
-            .hausdorff_distance(routes.loc[pairs["old"]], align=False)
-            .values
-        )
-        replaced = pairs.sort_values(["gap", "distance"]).drop_duplicates("new")
         return (
             temporal["facilitycl"]
             .loc[replaced["old"]]
