@@ -69,7 +69,7 @@ def render_map(routes: RouteData) -> None:
     map_object = folium.Map(
         location=[routes.center_lat, routes.center_lon],
         zoom_start=10,
-        tiles="CartoDB positron",
+        tiles="Esri.WorldGrayCanvas",
         # draw routes on a canvas rather than individual SVG elements, for performance
         prefer_canvas=True,
     )
