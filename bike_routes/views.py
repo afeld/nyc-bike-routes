@@ -11,10 +11,6 @@ from bike_routes.facilities import (
 )
 
 
-def render_hero() -> None:
-    st.title("NYC bike routes over time")
-
-
 def render_yearly_miles(routes: RouteData) -> None:
     yearly_miles = (
         routes.temporal.set_index("instdate")

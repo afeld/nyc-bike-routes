@@ -1,7 +1,6 @@
 import streamlit as st
 
 from bike_routes.data import load_routes
-from bike_routes.views import render_hero
 
 st.set_page_config(
     page_title="NYC Bike Routes Over Time",
@@ -12,7 +11,7 @@ st.set_page_config(
 
 def main() -> None:
     routes = load_routes()
-    render_hero()
+    st.title("NYC bike routes over time")
 
     page = st.navigation(
         [

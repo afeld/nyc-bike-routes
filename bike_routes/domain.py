@@ -14,22 +14,6 @@ class RouteData:
     dataset_last_updated: pd.Timestamp
 
     @property
-    def total_routes(self) -> int:
-        return len(self.temporal)
-
-    @property
-    def total_miles(self) -> float:
-        return self.temporal["length_miles"].sum()
-
-    @property
-    def first_year(self) -> int:
-        return int(self.earliest.year)
-
-    @property
-    def latest_year(self) -> int:
-        return int(self.latest.year)
-
-    @property
     def formatted_last_updated(self) -> str:
         if pd.isna(self.dataset_last_updated):
             return "Unknown"
