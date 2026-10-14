@@ -12,7 +12,15 @@ MAP_ROUTES_FILE = "map_routes.geojson"
 METADATA_FILE = "metadata.json"
 MAYORS_FILE = "mayors.csv"
 MAYOR_COLUMNS = ["full_name", "start_date", "end_date"]
-ROUTE_COLUMNS = ["instdate", "ret_date", "facilitycl", "length_miles"]
+ROUTE_COLUMNS = [
+    "instdate",
+    "ret_date",
+    "facilitycl",
+    "replaced_facilitycl",
+    "length_miles",
+    "street",
+    "boro",
+]
 MAP_DATE_COLUMNS = ["instdate", "ret_date"]
 
 

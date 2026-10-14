@@ -11,6 +11,22 @@ from bike_routes.facilities import (
     normalize_facility_code,
 )
 
+NEW = "New"
+REPLACED = "Replaced existing"
+# codes from the data dictionary:
+# https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data
+BOROUGHS = {
+    "1": "Manhattan",
+    "2": "Bronx",
+    "3": "Brooklyn",
+    "4": "Queens",
+    "5": "Staten Island",
+}
+
+
+def get_kind(temporal: pd.DataFrame) -> pd.Series:
+    return temporal["replaced_facilitycl"].isna().map({True: NEW, False: REPLACED})
+
 
 def render_yearly_miles(routes: RouteData) -> None:
     yearly_miles = (
@@ -28,6 +44,57 @@ def render_yearly_miles(routes: RouteData) -> None:
     )
 
     st.line_chart(yearly_miles, x="Year", y="Miles added")
+
+
+def render_projects(routes: RouteData) -> None:
+    temporal = routes.temporal
+    projects = (
+        temporal.assign(
+            year=temporal["instdate"].dt.year,
+            kind=get_kind(temporal),
+            facility=temporal["facilitycl"].map(normalize_facility_code),
+            replaced=temporal["replaced_facilitycl"].map(
+                normalize_facility_code, na_action="ignore"
+            ),
+        )
+        .groupby(
+            ["year", "street", "boro", "kind", "facility", "replaced"], dropna=False
+        )["length_miles"]
+        .sum()
+        .reset_index()
+    )
+    projects["boro"] = projects["boro"].map(BOROUGHS)
+    projects["facility"] = projects["facility"].map(get_facility_label)
+    projects["replaced"] = (
+        projects["replaced"].map(get_facility_label, na_action="ignore").fillna("")
+    )
+
+    year_col, kind_col = st.columns(2)
+    years = sorted(projects["year"].dropna().unique(), reverse=True)
+    year = year_col.selectbox(
+        "Year", years, index=None, placeholder="All years", format_func=str
+    )
+    kinds = kind_col.pills(
+        "Show", [NEW, REPLACED], selection_mode="multi", default=[NEW, REPLACED]
+    )
+
+    if year is not None:
+        projects = projects[projects["year"] == year]
+    projects = projects[projects["kind"].isin(kinds)]
+
+    st.dataframe(
+        projects.sort_values("length_miles", ascending=False),
+        hide_index=True,
+        column_order=["year", "street", "boro", "facility", "replaced", "length_miles"],
+        column_config={
+            "year": st.column_config.NumberColumn("Year", format="%d"),
+            "street": "Street",
+            "boro": "Borough",
+            "facility": "Type",
+            "replaced": "Replaced",
+            "length_miles": st.column_config.NumberColumn("Miles", format="%.2f"),
+        },
+    )
 
 
 def render_cumulative_miles(routes: RouteData) -> None:

@@ -18,6 +18,11 @@ def main() -> None:
             st.Page("app_pages/home.py", title="Map", icon=":material/map:"),
             st.Page("app_pages/miles.py", title="Miles", icon=":material/show_chart:"),
             st.Page(
+                "app_pages/projects.py",
+                title="Projects",
+                icon=":material/construction:",
+            ),
+            st.Page(
                 "app_pages/mayors.py", title="Mayors", icon=":material/account_balance:"
             ),
         ],

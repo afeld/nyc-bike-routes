@@ -29,12 +29,33 @@ WIKIDATA_URL = "https://query.wikidata.org/sparql"
 DATE_COLUMNS = [":created_at", "ret_date", "instdate"]
 MAP_SIMPLIFY_TOLERANCE_FEET = 30.0
 MAP_COORDINATE_PRECISION_DEGREES = 1e-5
+# How far apart a retirement and an installation on the same street segment can be, for the new facility to count as replacing the old one.
+REPLACEMENT_WINDOW = pd.Timedelta(days=60)
+# The data spells street types inconsistently, e.g. "PARK AV" and "PARK AVENUE".
+STREET_TYPE_ABBREVIATIONS = {
+    "AVENUE": "AV",
+    "AVE": "AV",
+    "STREET": "ST",
+    "BOULEVARD": "BLVD",
+    "BL": "BLVD",
+    "ROAD": "RD",
+    "PARKWAY": "PKWY",
+    "PLACE": "PL",
+    "DRIVE": "DR",
+}
 
 
 def remove_timezone(series: pd.Series) -> pd.Series:
     if getattr(series.dt, "tz", None) is not None:
         return series.dt.tz_localize(None)
     return series
+
+
+def normalize_street(street: str | None) -> str:
+    words = (street or "").upper().split()
+    if words:
+        words[-1] = STREET_TYPE_ABBREVIATIONS.get(words[-1], words[-1])
+    return " ".join(words)
 
 
 class MayorRepository:
@@ -142,7 +163,30 @@ class RouteRepository:
 
         temporal["instdate"] = remove_timezone(temporal["instdate"])
         temporal["ret_date"] = remove_timezone(temporal["ret_date"])
+        temporal["street"] = temporal["street"].map(normalize_street)
+        temporal["replaced_facilitycl"] = self.find_replaced_facilities(temporal)
         return temporal
+
+    def find_replaced_facilities(self, temporal: pd.DataFrame) -> pd.Series:
+        """The facility class that each route replaced, i.e. the one retired from the same street segment around when the route was installed. Missing for routes that were new."""
+        pairs = (
+            temporal[["segmentid", "instdate"]]
+            .reset_index(names="new")
+            .merge(
+                temporal.loc[
+                    temporal["ret_date"].notna(),
+                    ["segmentid", "ret_date", "facilitycl"],
+                ].reset_index(names="old"),
+                on="segmentid",
+            )
+        )
+        pairs["gap"] = (pairs["instdate"] - pairs["ret_date"]).abs()
+        pairs = pairs[
+            (pairs["new"] != pairs["old"]) & (pairs["gap"] <= REPLACEMENT_WINDOW)
+        ]
+        # if multiple were retired around then, use the closest
+        replaced = pairs.sort_values("gap").drop_duplicates("new").set_index("new")
+        return replaced["facilitycl"].reindex(temporal.index)
 
     def project_routes_with_lengths(self, temporal: GeoDataFrame) -> GeoDataFrame:
         projected = temporal.to_crs(epsg=2263)

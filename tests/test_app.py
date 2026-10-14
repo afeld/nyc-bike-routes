@@ -4,7 +4,12 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 APP_PATH = Path(__file__).resolve().parent.parent / "app.py"
-PAGES = ["app_pages/home.py", "app_pages/miles.py", "app_pages/mayors.py"]
+PAGES = [
+    "app_pages/home.py",
+    "app_pages/miles.py",
+    "app_pages/projects.py",
+    "app_pages/mayors.py",
+]
 
 
 @pytest.mark.parametrize("page", PAGES)
