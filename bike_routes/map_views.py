@@ -70,6 +70,8 @@ def render_map(routes: RouteData) -> None:
         location=[routes.center_lat, routes.center_lon],
         zoom_start=10,
         tiles="CartoDB positron",
+        # draw routes on a canvas rather than individual SVG elements, for performance
+        prefer_canvas=True,
     )
 
     folium.plugins.Fullscreen(
