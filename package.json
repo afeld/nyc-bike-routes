@@ -1,0 +1,16 @@
+{
+  "name": "nyc-bike-routes",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf src/.observablehq/cache",
+    "build": "npm run clean && observable build",
+    "dev": "observable preview"
+  },
+  "dependencies": {
+    "@observablehq/framework": "1.13.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
