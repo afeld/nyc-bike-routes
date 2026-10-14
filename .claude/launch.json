@@ -4,7 +4,7 @@
     {
       "name": "site",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "python", "-m", "http.server", "8000", "--directory", "site"],
+      "runtimeArgs": ["run", "python", "-m", "http.server", "8000", "--directory", "."],
       "port": 8000
     }
   ]

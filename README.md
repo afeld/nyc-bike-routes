@@ -1,41 +1,29 @@
 # NYC Bike Routes
 
-A static site, built from a snapshot of the data and deployed to GitHub Pages by a [GitHub Action](.github/workflows/deploy.yml).
+A static site: [`index.html`](index.html) loads a snapshot of the data from [`data/`](data/) and draws the map with [Leaflet](https://leafletjs.com/) and the charts with [Vega-Lite](https://vega.github.io/vega-lite/). There's no build step; GitHub Pages serves the repository as-is.
 
-## Setup
+## Viewing locally
 
-1. Install:
-   1. Python
-   1. [uv](https://docs.astral.sh/uv/getting-started/installation/)
-1. Install dependencies.
+Serve the repository with any static file server, such as:
 
-   ```sh
-   uv sync
-   ```
+```sh
+python -m http.server 8000
+```
 
-1. Build the site into `site/`.
-
-   ```sh
-   uv run python -m bike_routes.build_site
-   ```
-
-1. View it at http://localhost:8000.
-
-   ```sh
-   uv run python -m http.server 8000 --directory site
-   ```
+then go to http://localhost:8000.
 
 ## Data
 
-The site is built from a processed snapshot of the [bike routes](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data) and [mayors](https://www.wikidata.org/wiki/Q785304) in [`data/`](data/). A [GitHub Action](.github/workflows/update-data.yml) refreshes it weekly, committing only if it changed, after which the site is redeployed. To refresh it yourself, such as after changing how the data is processed:
+The snapshot combines the [bike routes](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data) from NYC Open Data and the [mayors](https://www.wikidata.org/wiki/Q785304) from Wikidata, preprocessed into what the map and each chart need. A [GitHub Action](.github/workflows/update-data.yml) refreshes it weekly, committing only if it changed. To refresh it yourself, such as after changing how the data is processed:
 
-```sh
-uv run --group data python -m bike_routes.update_data
-```
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/).
+1. Run:
+
+   ```sh
+   uv run python -m bike_routes.update_data
+   ```
 
 ## Testing
-
-Build the site and check its contents:
 
 ```sh
 uv run pytest

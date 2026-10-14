@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NYC Bike Routes Over Time</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚲</text></svg>"
+    />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet.fullscreen@3.0.0/Control.FullScreen.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.timeline@1.6.0/dist/leaflet.timeline.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.fullscreen@3.0.0/Control.FullScreen.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vega@6.4.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@6.4.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@7.3.0"></script>
+
+    <style>
+      :root {
+        color-scheme: light;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+        --accent: #2f7a45;
+      }
+      body {
+        margin: 0;
+        background: #fff;
+        color: var(--text);
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        line-height: 1.5;
+      }
+      main {
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      a {
+        color: var(--accent);
+      }
+      nav {
+        display: flex;
+        gap: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 1.5rem;
+        position: sticky;
+        top: 0;
+        background: #fff;
+        z-index: 1001;
+      }
+      nav a {
+        padding: 0.5rem 0;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      main > section {
+        scroll-margin-top: 3rem;
+        margin-bottom: 3rem;
+      }
+      #map {
+        height: 70vh;
+        min-height: 400px;
+      }
+      .swatch {
+        display: inline-block;
+        width: 0.9em;
+        height: 0.9em;
+        margin-right: 0.3em;
+        vertical-align: -0.1em;
+      }
+      /* stretch the timeline slider across the bottom of the map */
+      #map .leaflet-bottom.leaflet-left {
+        width: 100%;
+      }
+      #map .leaflet-timeline-controls {
+        box-sizing: border-box;
+        width: calc(100% - 20px);
+      }
+      #map .leaflet-timeline-control .time-text {
+        font-size: 1.25rem;
+        font-weight: bold;
+      }
+      .chart {
+        width: 100%;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.4rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+      }
+      td:nth-child(n + 2),
+      th:nth-child(n + 2) {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      footer {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>NYC bike routes over time</h1>
+      <nav>
+        <a href="#map-section">Map</a>
+        <a href="#miles">Miles</a>
+        <a href="#mayors">Mayors</a>
+      </nav>
+
+      <section id="map-section">
+        <div id="map"></div>
+      </section>
+
+      <section id="miles">
+        <h2>Miles added by year</h2>
+        <div class="chart" id="yearly-miles"></div>
+
+        <h2>Network size</h2>
+        <div class="chart" id="network-size"></div>
+      </section>
+
+      <section id="mayors">
+        <h2>Mayoral administrations</h2>
+        <p>
+          This compares route miles that were installed during each administration window.
+          Mayor information from <a href="https://www.wikidata.org/">Wikidata</a>.
+        </p>
+        <div class="chart" id="mayors-chart"></div>
+
+        <h2>Top installers</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Term start</th>
+              <th>Term end</th>
+              <th>Miles installed</th>
+            </tr>
+          </thead>
+          <tbody id="top-installers"></tbody>
+        </table>
+      </section>
+
+      <footer>
+        <p>
+          Uses
+          <a
+            href="https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data"
+            >Bike Routes from NYC Open Data</a
+          >. Route length is measured in the
+          <a href="https://epsg.io/2263">EPSG:2263 coordinate system</a> and converted from
+          feet to miles. Dataset updated <span id="last-updated">…</span>.
+        </p>
+        <p>
+          <a href="https://www.nyc.gov/html/dot/html/bicyclists/bikemaps.shtml"
+            >General NYC bike map info.</a
+          >
+          App created by <a href="https://api.afeld.me">Aidan Feldman</a>.
+        </p>
+      </footer>
+    </main>
+
+    <script>
+      // The data is a snapshot, refreshed by bike_routes/update_data.py.
+
+      // names come from the data dictionary:
+      // https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data
+      // colors come from the official map:
+      // https://www.nyc.gov/html/dot/html/bicyclists/bikemaps.shtml
+      const FACILITY_TYPES = [
+        { code: "I", name: "Protected", color: "#429058" },
+        { code: "II", name: "Conventional", color: "#53b5e9" },
+        { code: "III", name: "Shared lane / signed route", color: "#a864a3" },
+        { code: "L", name: "Link", color: "#acce67" },
+      ].map((type, order) => ({ ...type, order, label: `${type.name} (${type.code})` }));
+
+      const fetchJSON = (path) => fetch(path).then((response) => response.json());
+      const formatMiles = (miles) =>
+        miles.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+      async function renderMap(metadata) {
+        const routes = await fetchJSON("data/map_routes.geojson");
+
+        const map = L.map("map", { fullscreenControl: true });
+        // fit to all of the routes, leaving room for the timeline slider along the bottom
+        map.fitBounds(L.geoJSON(routes).getBounds(), {
+          paddingTopLeft: [10, 10],
+          paddingBottomRight: [10, 80],
+        });
+        L.tileLayer(
+          "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+          { attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ", maxZoom: 16 },
+        ).addTo(map);
+
+        // one timeline per type, so the layers control works as a legend that can toggle them
+        const overlays = {};
+        const timelines = FACILITY_TYPES.map((type) => {
+          const features = routes.features.filter(
+            (feature) => feature.properties.facilitycl === type.code && feature.properties.instdate,
+          );
+          const timeline = L.timeline(
+            { type: "FeatureCollection", features },
+            {
+              getInterval: (feature) => ({
+                start: Date.parse(feature.properties.instdate),
+                end: Date.parse(feature.properties.ret_date ?? metadata.latest),
+              }),
+              style: { color: type.color, weight: 3, opacity: 0.9 },
+            },
+          ).addTo(map);
+          overlays[`<span class="swatch" style="background: ${type.color}"></span>${type.label}`] =
+            timeline;
+          return timeline;
+        });
+        L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+
+        const slider = L.timelineSliderControl({
+          showTicks: true,
+          enableKeyboardControls: true,
+          formatOutput: (date) => new Date(date).getUTCFullYear(),
+        }).addTo(map);
+        slider.addTimelines(...timelines);
+        // rather than the autoPlay option, which starts before the timelines are added (and they pause it) once the page has loaded
+        slider.play();
+      }
+
+      const yearAxis = { field: "year", type: "quantitative", title: "Year", axis: { format: "d" } };
+
+      const yearlyMilesSpec = {
+        data: { url: "data/yearly_miles.json" },
+        mark: { type: "line", point: true },
+        encoding: {
+          x: yearAxis,
+          y: { field: "miles", type: "quantitative", title: "Miles added" },
+          tooltip: [
+            { field: "year", title: "Year" },
+            { field: "miles", title: "Miles added", format: ",.1f" },
+          ],
+        },
+        width: "container",
+        height: 350,
+      };
+
+      const networkSizeSpec = {
+        data: { url: "data/network_size.json" },
+        transform: [
+          {
+            lookup: "type",
+            from: { data: { values: FACILITY_TYPES }, key: "code", fields: ["label", "order"] },
+          },
+          { filter: { param: "visible" } },
+        ],
+        // clicking a type in the legend hides/shows it, starting with all of them shown
+        params: [
+          {
+            name: "visible",
+            select: { type: "point", fields: ["label"], toggle: "true" },
+            bind: "legend",
+            value: FACILITY_TYPES.map((type) => ({ label: type.label })),
+          },
+        ],
+        mark: "area",
+        encoding: {
+          x: yearAxis,
+          y: { field: "miles", type: "quantitative", title: "Miles", stack: true },
+          color: {
+            field: "label",
+            type: "nominal",
+            title: "Type (click to toggle)",
+            scale: {
+              domain: FACILITY_TYPES.map((type) => type.label),
+              range: FACILITY_TYPES.map((type) => type.color),
+            },
+            // below rather than beside, so it doesn't squeeze the chart on narrow screens
+            legend: { orient: "bottom", direction: "vertical", labelLimit: 0 },
+          },
+          order: { field: "order", type: "quantitative" },
+          tooltip: [
+            { field: "year", title: "Year" },
+            { field: "label", title: "Type" },
+            { field: "miles", title: "Miles", format: ",.1f" },
+          ],
+        },
+        width: "container",
+        height: 350,
+      };
+
+      const mayorsSpec = {
+        data: { url: "data/mayors.json" },
+        transform: [{ calculate: "toDate(datum.start_date)", as: "start" }],
+        mark: "bar",
+        encoding: {
+          x: { field: "miles", type: "quantitative", title: "Miles installed" },
+          y: {
+            field: "full_name",
+            type: "nominal",
+            title: "Mayor (most recent first)",
+            sort: { field: "start", op: "max", order: "descending" },
+          },
+          tooltip: [
+            { field: "full_name", title: "Mayor" },
+            { field: "miles", title: "Miles installed", format: ",.1f" },
+          ],
+        },
+        width: "container",
+        height: 800,
+      };
+
+      async function renderTopInstallers() {
+        const mayors = await fetchJSON("data/mayors.json");
+        const rows = mayors
+          .toSorted((a, b) => b.miles - a.miles)
+          .map((mayor) => {
+            const row = document.createElement("tr");
+            for (const value of [
+              mayor.full_name,
+              mayor.start_date?.slice(0, 4) ?? "",
+              mayor.end_date?.slice(0, 4) ?? "",
+              formatMiles(mayor.miles),
+            ]) {
+              row.insertCell().textContent = value;
+            }
+            return row;
+          });
+        document.getElementById("top-installers").replaceChildren(...rows);
+      }
+
+      async function main() {
+        const metadata = await fetchJSON("data/metadata.json");
+        document.getElementById("last-updated").textContent =
+          metadata.dataset_last_updated?.slice(0, 10) ?? "Unknown";
+
+        const embedOptions = { actions: false };
+        await Promise.all([
+          renderMap(metadata),
+          vegaEmbed("#yearly-miles", yearlyMilesSpec, embedOptions),
+          vegaEmbed("#network-size", networkSizeSpec, embedOptions),
+          vegaEmbed("#mayors-chart", mayorsSpec, embedOptions),
+          renderTopInstallers(),
+        ]);
+        // the content above a linked section has now loaded and moved it, so jump there again
+        document.getElementById(location.hash.slice(1))?.scrollIntoView();
+      }
+
+      main();
+    </script>
+  </body>
+</html>

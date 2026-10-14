@@ -1,4 +1,4 @@
-"""Downloads the bike routes from NYC Open Data and the mayors from Wikidata, and saves the processed snapshot that the app reads."""
+"""Downloads the bike routes from NYC Open Data and the mayors from Wikidata, and saves the processed snapshot that the site reads."""
 
 import json
 from pathlib import Path
@@ -9,17 +9,22 @@ import httpx
 import pandas as pd
 from geopandas import GeoDataFrame
 
-from bike_routes.repositories import (
-    DATA_DIR,
-    MAP_DATE_COLUMNS,
-    MAP_ROUTES_FILE,
-    MAYOR_COLUMNS,
-    MAYORS_FILE,
-    METADATA_FILE,
-    ROUTE_COLUMNS,
-    ROUTES_FILE,
-    RouteSnapshotRepository,
+from bike_routes.stats import (
+    get_date_range,
+    mayors_with_miles,
+    network_size,
+    yearly_miles,
 )
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+MAP_ROUTES_FILE = "map_routes.geojson"
+YEARLY_MILES_FILE = "yearly_miles.json"
+NETWORK_SIZE_FILE = "network_size.json"
+MAYORS_FILE = "mayors.json"
+METADATA_FILE = "metadata.json"
+ROUTE_COLUMNS = ["instdate", "ret_date", "facilitycl", "length_miles"]
+MAP_DATE_COLUMNS = ["instdate", "ret_date"]
+MAYOR_COLUMNS = ["full_name", "start_date", "end_date"]
 
 DATA_URL = (
     "https://data.cityofnewyork.us/api/views/mzxg-pwib/rows.geojson?accessType=DOWNLOAD"
@@ -35,6 +40,12 @@ def remove_timezone(series: pd.Series) -> pd.Series:
     if getattr(series.dt, "tz", None) is not None:
         return series.dt.tz_localize(None)
     return series
+
+
+def write_records(df: pd.DataFrame, path: Path) -> None:
+    path.write_text(
+        df.to_json(orient="records", indent=1, double_precision=2) + "\n"
+    )
 
 
 class MayorRepository:
@@ -187,19 +198,26 @@ class RouteRepository:
         for column in MAP_DATE_COLUMNS:
             map_routes[column] = map_routes[column].dt.strftime("%Y-%m-%d")
         dataset_last_updated = self.fetch_dataset_last_updated(metadata)
-        earliest, _ = RouteSnapshotRepository().get_route_date_range(temporal)
-        mayors = MayorRepository().load(earliest, dataset_last_updated)
+        routes = pd.DataFrame(temporal[ROUTE_COLUMNS])
+        earliest, latest = get_date_range(routes)
+        mayors = mayors_with_miles(
+            routes, MayorRepository().load(earliest, dataset_last_updated)
+        )
+        for column in ["start_date", "end_date"]:
+            mayors[column] = mayors[column].dt.strftime("%Y-%m-%d")
 
         data_dir.mkdir(exist_ok=True)
-        temporal[ROUTE_COLUMNS].to_parquet(data_dir / ROUTES_FILE, index=False)
         (data_dir / MAP_ROUTES_FILE).write_text(map_routes.to_json(drop_id=True))
-        mayors.to_csv(data_dir / MAYORS_FILE, index=False, date_format="%Y-%m-%d")
+        write_records(yearly_miles(routes), data_dir / YEARLY_MILES_FILE)
+        write_records(network_size(routes), data_dir / NETWORK_SIZE_FILE)
+        write_records(mayors, data_dir / MAYORS_FILE)
         snapshot_metadata = {
             "dataset_last_updated": (
                 dataset_last_updated.isoformat()
                 if pd.notna(dataset_last_updated)
                 else None
             ),
+            "latest": latest.strftime("%Y-%m-%d"),
         }
         (data_dir / METADATA_FILE).write_text(
             json.dumps(snapshot_metadata, indent=2) + "\n"
