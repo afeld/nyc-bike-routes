@@ -29,8 +29,9 @@ def get_kind(temporal: pd.DataFrame) -> pd.Series:
 
 
 def render_yearly_miles(routes: RouteData) -> None:
+    new_routes = routes.temporal[get_kind(routes.temporal) == NEW]
     yearly_miles = (
-        routes.temporal.set_index("instdate")
+        new_routes.set_index("instdate")
         .resample("YS")["length_miles"]
         .sum()
         .reset_index()
@@ -44,6 +45,9 @@ def render_yearly_miles(routes: RouteData) -> None:
     )
 
     st.line_chart(yearly_miles, x="Year", y="Miles added")
+    st.caption(
+        "Excludes routes that replaced existing ones, such as a conventional lane being upgraded to a protected one. See [Projects](projects) for those."
+    )
 
 
 def render_projects(routes: RouteData) -> None:
