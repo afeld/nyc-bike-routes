@@ -13,3 +13,14 @@ def load_routes() -> RouteData:
 @st.cache_data
 def load_mayors() -> pd.DataFrame:
     return MayorSnapshotRepository().load()
+
+
+def get_mayor(dates: pd.Series) -> pd.Series:
+    """Who was mayor on each date."""
+    mayors = load_mayors().sort_values("start_date")
+    return pd.cut(
+        dates,
+        bins=[*mayors["start_date"], pd.Timestamp.max],
+        right=False,
+        labels=mayors["full_name"].tolist(),
+    )

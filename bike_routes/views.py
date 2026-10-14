@@ -2,7 +2,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from bike_routes.data import load_mayors
+from bike_routes.data import get_mayor, load_mayors
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
     FACILITY_ORDER,
@@ -56,6 +56,7 @@ def render_projects(routes: RouteData) -> None:
     projects = (
         temporal.assign(
             year=temporal["instdate"].dt.year,
+            mayor=get_mayor(temporal["instdate"]),
             kind=get_kind(temporal),
             facility=temporal["facilitycl"].map(normalize_facility_code),
             replaced=temporal["replaced_facilitycl"].map(
@@ -64,8 +65,12 @@ def render_projects(routes: RouteData) -> None:
         )
         .groupby(
             ["year", "street", "boro", "kind", "facility", "replaced"], dropna=False
-        )["length_miles"]
-        .sum()
+        )
+        .agg(
+            length_miles=("length_miles", "sum"),
+            # in order, in case the mayor changed partway through the year
+            mayor=("mayor", lambda mayors: " / ".join(mayors.unique().sort_values())),
+        )
         .reset_index()
     )
     projects["boro"] = projects["boro"].map(BOROUGHS)
@@ -93,9 +98,18 @@ def render_projects(routes: RouteData) -> None:
         hide_index=True,
         on_select="rerun",
         selection_mode="single-row",
-        column_order=["year", "street", "boro", "facility", "replaced", "length_miles"],
+        column_order=[
+            "year",
+            "mayor",
+            "street",
+            "boro",
+            "facility",
+            "replaced",
+            "length_miles",
+        ],
         column_config={
             "year": st.column_config.NumberColumn("Year", format="%d"),
+            "mayor": "Mayor",
             "street": "Street",
             "boro": "Borough",
             "facility": "Type",

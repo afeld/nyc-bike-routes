@@ -2,12 +2,14 @@ from html import escape
 from typing import cast
 
 import folium
+import pandas as pd
 import streamlit as st
 from branca.element import Element, Figure
 from folium.plugins import Fullscreen
 from folium.plugins.timeline import Timeline, TimelineSlider
 from folium.utilities import TypeBounds
 
+from bike_routes.data import get_mayor
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
     FACILITY_ORDER,
@@ -90,7 +92,13 @@ def render_map(routes: RouteData) -> None:
     features_by_facility: dict[str, list[dict]] = {
         facility_code: [] for facility_code in FACILITY_ORDER
     }
-    for feature in routes.map_routes["features"]:
+    features = routes.map_routes["features"]
+    mayors = get_mayor(
+        pd.to_datetime(
+            pd.Series([feature["properties"]["instdate"] for feature in features])
+        )
+    )
+    for feature, mayor in zip(features, mayors):
         facility_code = normalize_facility_code(feature["properties"]["facilitycl"])
         features_by_facility.setdefault(facility_code, []).append(
             {
@@ -103,7 +111,8 @@ def render_map(routes: RouteData) -> None:
                     "popup": (
                         f"<strong>{escape(feature['properties']['street'])}</strong><br>"
                         f"{get_facility_label(facility_code)}, "
-                        f"installed {feature['properties']['instdate'][:4]}"
+                        f"installed {feature['properties']['instdate'][:4]} "
+                        f"under {escape(mayor)}"
                     ),
                 },
             }
