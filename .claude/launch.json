@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "site",
+      "name": "quarto",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "python", "-m", "http.server", "8000", "--directory", "_site"],
-      "port": 8000
+      "runtimeArgs": ["run", "quarto", "preview", "--port", "8501", "--no-browser"],
+      "port": 8501
     }
   ]
 }

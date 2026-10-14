@@ -1204,7 +1204,6 @@ source = { virtual = "." }
 dependencies = [
     { name = "altair" },
     { name = "folium" },
-    { name = "jupyter" },
     { name = "pandas" },
     { name = "pyarrow" },
     { name = "quarto-cli" },
@@ -1225,7 +1224,6 @@ dev = [
 requires-dist = [
     { name = "altair", specifier = ">=6.3.0" },
     { name = "folium", specifier = ">=0.20.0" },
-    { name = "jupyter", specifier = ">=1.1.1" },
     { name = "pandas", specifier = ">=3.0.3" },
     { name = "pyarrow", specifier = ">=24.0.0" },
     { name = "quarto-cli", specifier = ">=1.10.19" },

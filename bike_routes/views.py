@@ -2,6 +2,7 @@ import altair as alt
 import pandas as pd
 from IPython.display import display
 
+from bike_routes.data import load_mayors
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
     FACILITY_ORDER,
@@ -11,7 +12,16 @@ from bike_routes.facilities import (
 )
 
 
-def yearly_miles_chart(routes: RouteData) -> alt.Chart:
+def display_light_and_dark(chart: alt.Chart) -> None:
+    """Outputs a light and a dark version of the chart, for a Quarto cell with `renderings: [light, dark]` to switch between."""
+
+    chart = chart.properties(width="container")
+    display(chart)
+    with alt.theme.enable("dark"):
+        display(chart.configure(background="transparent"))
+
+
+def render_yearly_miles(routes: RouteData) -> None:
     yearly_miles = (
         routes.temporal.set_index("instdate")
         .resample("YS")["length_miles"]
@@ -19,27 +29,30 @@ def yearly_miles_chart(routes: RouteData) -> alt.Chart:
         .reset_index()
     )
     yearly_miles["year"] = yearly_miles["instdate"].dt.year
+    yearly_miles = yearly_miles.rename(
+        columns={
+            "year": "Year",
+            "length_miles": "Miles added",
+        }
+    )
 
-    return (
-        alt.Chart(yearly_miles[["year", "length_miles"]])
+    display_light_and_dark(
+        alt.Chart(yearly_miles)
         .mark_line(point=True)
         .encode(
-            x=alt.X("year:Q", title="Year", axis=alt.Axis(format="d")),
-            y=alt.Y("length_miles:Q", title="Miles added"),
-            tooltip=[
-                alt.Tooltip("year:Q", title="Year", format="d"),
-                alt.Tooltip("length_miles:Q", title="Miles added", format=",.1f"),
-            ],
+            x=alt.X("Year:Q", axis=alt.Axis(format="d")),
+            y="Miles added:Q",
+            tooltip=[alt.Tooltip("Year:Q", format="d"), "Miles added:Q"],
         )
-        .properties(width="container", height=350)
     )
 
 
-def network_size_chart(routes: RouteData) -> alt.Chart:
+def render_cumulative_miles(routes: RouteData) -> None:
     facility_codes = (
         routes.temporal["facilitycl"].fillna("").map(normalize_facility_code)
     )
     unknown_codes = sorted(set(facility_codes) - set(FACILITY_ORDER))
+    # in the chart's title rather than separate output, which would throw off the cell's light/dark renderings
     title = ""
     if unknown_codes:
         unknown_list = ", ".join(code or "(blank)" for code in unknown_codes)
@@ -56,6 +69,7 @@ def network_size_chart(routes: RouteData) -> alt.Chart:
     ).T.reindex(columns=FACILITY_ORDER).fillna(0)
     stacked_miles.columns = [get_facility_label(code) for code in FACILITY_ORDER]
     labels = stacked_miles.columns.tolist()
+
     # clicking a type in the legend hides/shows it, starting with all of them shown
     visible = alt.selection_point(
         fields=["facilitycl"],
@@ -63,8 +77,7 @@ def network_size_chart(routes: RouteData) -> alt.Chart:
         toggle="true",
         value=[{"facilitycl": label} for label in labels],
     )
-
-    return (
+    chart = (
         alt.Chart(
             stacked_miles.rename_axis("year")
             .reset_index()
@@ -96,70 +109,64 @@ def network_size_chart(routes: RouteData) -> alt.Chart:
         .transform_calculate(order=f"indexof({labels!r}, datum.facilitycl)")
         .add_params(visible)
         .transform_filter(visible)
-        .properties(width="container", height=350)
+        # fit the width to the page, but make the height the plot's, so the legend below doesn't shrink it
+        .properties(
+            height=300, autosize=alt.AutoSizeParams(type="fit-x", contains="padding")
+        )
     )
+    display_light_and_dark(chart)
 
 
-def mayors_with_miles(routes: RouteData, mayors: pd.DataFrame) -> pd.DataFrame:
-    return mayors.assign(
-        miles_installed=mayors.apply(routes.miles_during_administration, axis=1)
-        if not mayors.empty
-        else pd.Series(dtype=float)
+def _load_mayors_with_miles(routes: RouteData) -> pd.DataFrame:
+    mayor_df = load_mayors()
+    mayor_df["miles_installed"] = mayor_df.apply(
+        routes.miles_during_administration,
+        axis=1,
     )
+    return mayor_df
 
 
-def mayors_chart(mayors: pd.DataFrame) -> alt.Chart:
-    most_recent_first = mayors.sort_values("start_date", ascending=False)[
-        "full_name"
-    ].tolist()
-    return (
-        alt.Chart(mayors[["full_name", "miles_installed"]])
+def render_mayors(routes: RouteData) -> None:
+    mayor_df = _load_mayors_with_miles(routes)
+
+    if mayor_df.empty:
+        print("No mayor data was returned.")
+        return
+
+    display_light_and_dark(
+        alt.Chart(mayor_df[["full_name", "miles_installed"]])
         .mark_bar()
         .encode(
             x=alt.X("miles_installed:Q", title="Miles installed"),
             y=alt.Y(
                 "full_name:N",
                 title="Mayor (most recent first)",
-                sort=most_recent_first,
+                sort=mayor_df.sort_values("start_date", ascending=False)[
+                    "full_name"
+                ].tolist(),
             ),
             tooltip=[
                 alt.Tooltip("full_name:N", title="Mayor"),
                 alt.Tooltip("miles_installed:Q", title="Miles installed", format=",.1f"),
             ],
         )
-        .properties(width="container", height=800)
+        .properties(height=800)
     )
 
 
-def _years(dates: pd.Series) -> pd.Series:
-    """Blank where unknown, such as the end of the current mayor's term."""
-    return dates.dt.year.astype("Int64").astype("string").fillna("")
+def render_top_installers(routes: RouteData) -> None:
+    mayor_df = _load_mayors_with_miles(routes)
+    columns = ["full_name", "start_date", "end_date", "miles_installed"]
 
-
-def top_installers_table(mayors: pd.DataFrame) -> pd.DataFrame:
-    return (
-        mayors[["full_name", "start_date", "end_date", "miles_installed"]]
-        .sort_values("miles_installed", ascending=False)
-        .assign(
-            # years only
-            start_date=_years(mayors["start_date"]),
-            end_date=_years(mayors["end_date"]),
-            miles_installed=mayors["miles_installed"].round(1),
+    display(
+        mayor_df.sort_values("miles_installed", ascending=False)[columns]
+        .style.hide(axis="index")
+        .format(
+            {"start_date": "{:%Y}", "end_date": "{:%Y}", "miles_installed": "{:.1f}"},
+            na_rep="",
         )
-        .rename(
-            columns={
-                "full_name": "Name",
-                "start_date": "Term start",
-                "end_date": "Term end",
-                "miles_installed": "Miles installed",
-            }
+        .relabel_index(
+            ["Name", "Term start", "Term end", "Miles installed"], axis="columns"
         )
+        .set_table_attributes('class="table table-sm"')
     )
-
-
-def display_light_and_dark(chart: alt.Chart) -> None:
-    """Outputs a light and a dark version of the chart, for a Quarto cell with `renderings: [light, dark]` to switch between."""
-
-    display(chart)
-    with alt.theme.enable("dark"):
-        display(chart.configure(background="transparent"))

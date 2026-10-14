@@ -9,7 +9,6 @@ project:
 
 website:
   title: "NYC bike routes over time"
-  favicon: favicon.svg
   search: false
   navbar:
     left:

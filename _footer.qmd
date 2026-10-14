@@ -1,13 +1,12 @@
 ```{python}
 #| output: asis
-from bike_routes.repositories import RouteSnapshotRepository
+from bike_routes.data import load_routes
 
-last_updated = RouteSnapshotRepository().load().formatted_last_updated
 print(f"""
 ---
 
 ::: {{.text-center .small .text-body-secondary}}
-Uses [Bike Routes from NYC Open Data](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data). Route length is measured in the [EPSG:2263 coordinate system](https://epsg.io/2263) and converted from feet to miles. Dataset updated {last_updated}.
+Uses [Bike Routes from NYC Open Data](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data). Route length is measured in the [EPSG:2263 coordinate system](https://epsg.io/2263) and converted from feet to miles. Dataset updated {load_routes().formatted_last_updated}.
 
 [General NYC bike map info.](https://www.nyc.gov/html/dot/html/bicyclists/bikemaps.shtml) App created by [Aidan Feldman](https://api.afeld.me).
 :::

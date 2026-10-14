@@ -90,3 +90,17 @@ def test_map_plays(page: Page, site_url: str) -> None:
     expect(year).not_to_have_text(year.inner_text())
     routes = map_frame.locator(f'path.leaflet-interactive[stroke="{PROTECTED_COLOR}"]')
     expect(routes.first).to_be_attached()
+
+
+def test_network_size_legend_toggles(page: Page, site_url: str) -> None:
+    page.goto(site_url + "miles.html")
+    # the second chart on the page, in the light version that's shown by default
+    chart = page.locator(".light-content .vega-embed").nth(1)
+    areas = chart.locator(".mark-area path")
+    expect(areas).to_have_count(4)
+
+    conventional = chart.locator(".role-legend-label text", has_text="Conventional")
+    conventional.click()
+    expect(areas).to_have_count(3)
+    conventional.click()
+    expect(areas).to_have_count(4)

@@ -5,33 +5,21 @@ title: Mayoral administrations
 This compares route miles that were installed during each administration window. Mayor information from [Wikidata](https://www.wikidata.org/).
 
 ```{python}
-from IPython.display import HTML
+from bike_routes.data import load_routes
+from bike_routes.views import render_mayors, render_top_installers
 
-from bike_routes.charts import (
-    display_light_and_dark,
-    mayors_chart,
-    mayors_with_miles,
-    top_installers_table,
-)
-from bike_routes.repositories import MayorSnapshotRepository, RouteSnapshotRepository
-
-routes = RouteSnapshotRepository().load()
-mayors = mayors_with_miles(routes, MayorSnapshotRepository().load())
+routes = load_routes()
 ```
 
 ```{python}
 #| renderings: [light, dark]
-display_light_and_dark(mayors_chart(mayors))
+render_mayors(routes)
 ```
 
 ## Top installers
 
 ```{python}
-HTML(
-    top_installers_table(mayors).to_html(
-        index=False, border=0, classes="table table-sm"
-    )
-)
+render_top_installers(routes)
 ```
 
 {{< include _footer.qmd >}}

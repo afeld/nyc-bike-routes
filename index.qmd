@@ -3,13 +3,11 @@ title: Map
 ---
 
 ```{python}
-from bike_routes.map_views import build_map
-from bike_routes.repositories import RouteSnapshotRepository
+from bike_routes.data import load_routes
+from bike_routes.map_views import render_map
 
-map_object = build_map(RouteSnapshotRepository().load())
-# a fixed height, rather than folium's default aspect ratio, which is too short on narrow screens
-map_object.get_root().height = 600
-map_object
+routes = load_routes()
+render_map(routes)
 ```
 
 {{< include _footer.qmd >}}

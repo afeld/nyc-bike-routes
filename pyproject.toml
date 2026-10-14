@@ -6,7 +6,6 @@ requires-python = ">=3.14"
 dependencies = [
     "altair>=6.3.0",
     "folium>=0.20.0",
-    "jupyter>=1.1.1",
     "pandas>=3.0.3",
     "pyarrow>=24.0.0",
     "quarto-cli>=1.10.19",

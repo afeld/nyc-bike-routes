@@ -1,6 +1,7 @@
 import folium
 from branca.element import Element
 from folium.plugins.timeline import Timeline, TimelineSlider
+from IPython.display import display
 
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
@@ -39,7 +40,7 @@ def get_map_style_html() -> str:
         """
 
 
-def build_map(routes: RouteData) -> folium.Map:
+def render_map(routes: RouteData) -> None:
     """Uses the Folium Timeline plugin."""
 
     latest = routes.latest.strftime("%Y-%m-%d")
@@ -116,4 +117,6 @@ def build_map(routes: RouteData) -> folium.Map:
     # make the date larger
     root.header.add_child(Element(get_map_style_html()))
 
-    return map_object
+    # a fixed height, rather than folium's default aspect ratio, which is too short on narrow screens
+    root.height = 500
+    display(map_object)
