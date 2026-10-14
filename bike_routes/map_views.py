@@ -1,3 +1,5 @@
+from html import escape
+
 import folium
 import streamlit as st
 from branca.element import Element
@@ -58,6 +60,11 @@ def render_map(routes: RouteData) -> None:
                     "start": feature["properties"]["instdate"],
                     "end": feature["properties"]["ret_date"] or latest,
                     "facilitycl_color": get_facility_color(facility_code),
+                    "popup": (
+                        f"<strong>{escape(feature['properties']['street'])}</strong><br>"
+                        f"{get_facility_label(facility_code)}, "
+                        f"installed {feature['properties']['instdate'][:4]}"
+                    ),
                 },
             }
         )
@@ -89,6 +96,9 @@ def render_map(routes: RouteData) -> None:
                     };
                 }
                 """
+            ),
+            on_each_feature=folium.JsCode(
+                "(feature, layer) => layer.bindPopup(feature.properties.popup)"
             ),
         )
         # Timeline overrides the name in its constructor, so set it afterwards

@@ -199,8 +199,8 @@ class RouteRepository:
         projected: GeoDataFrame,
         tolerance_feet: float = MAP_SIMPLIFY_TOLERANCE_FEET,
     ) -> GeoDataFrame:
-        # Combine segments that appear and disappear together, so the map has far fewer features to draw.
-        keys = ["instdate", "ret_date", "facilitycl"]
+        # Combine segments of a street that appear and disappear together, so the map has far fewer features to draw.
+        keys = ["instdate", "ret_date", "facilitycl", "street"]
         simplified = projected[keys + ["geometry"]].dissolve(
             by=keys, dropna=False, as_index=False
         )
