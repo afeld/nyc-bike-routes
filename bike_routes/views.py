@@ -133,11 +133,7 @@ def render_cumulative_miles(routes: RouteData) -> None:
 
 
 def render_mayors(routes: RouteData) -> None:
-    try:
-        mayor_df = load_mayors(routes.earliest, routes.dataset_last_updated)
-    except Exception as exc:  # pragma: no cover - external network dependency
-        st.warning(f"Could not load mayor data: {exc}")
-        return
+    mayor_df = load_mayors()
 
     if mayor_df.empty:
         st.info("No mayor data was returned.")

@@ -1,7 +1,8 @@
-"""Downloads the bike routes from NYC Open Data and saves the processed snapshot that the app reads."""
+"""Downloads the bike routes from NYC Open Data and the mayors from Wikidata, and saves the processed snapshot that the app reads."""
 
 import json
 from pathlib import Path
+from textwrap import dedent
 from typing import Any
 
 import httpx
@@ -12,15 +13,19 @@ from bike_routes.repositories import (
     DATA_DIR,
     MAP_DATE_COLUMNS,
     MAP_ROUTES_FILE,
+    MAYOR_COLUMNS,
+    MAYORS_FILE,
     METADATA_FILE,
     ROUTE_COLUMNS,
     ROUTES_FILE,
+    RouteSnapshotRepository,
 )
 
 DATA_URL = (
     "https://data.cityofnewyork.us/api/views/mzxg-pwib/rows.geojson?accessType=DOWNLOAD"
 )
 DATASET_METADATA_URL = "https://data.cityofnewyork.us/api/views/mzxg-pwib.json"
+WIKIDATA_URL = "https://query.wikidata.org/sparql"
 DATE_COLUMNS = [":created_at", "ret_date", "instdate"]
 MAP_SIMPLIFY_TOLERANCE_FEET = 30.0
 MAP_COORDINATE_PRECISION_DEGREES = 1e-5
@@ -30,6 +35,74 @@ def remove_timezone(series: pd.Series) -> pd.Series:
     if getattr(series.dt, "tz", None) is not None:
         return series.dt.tz_localize(None)
     return series
+
+
+class MayorRepository:
+    def __init__(self, url: str = WIKIDATA_URL) -> None:
+        self.url = url
+        self.headers = {
+            "Accept": "application/sparql-results+json",
+            "User-Agent": "BikeRoutes/0.0 (https://afeld.me/; aidan.feldman@gmail.com)",
+        }
+
+    def build_query(
+        self, earliest: pd.Timestamp, dataset_last_updated: pd.Timestamp | None
+    ) -> str:
+        earliest_str = earliest.strftime("%Y-%m-%dT%H:%M:%SZ")
+        if pd.notna(dataset_last_updated):
+            latest_str = dataset_last_updated.strftime("%Y-%m-%dT%H:%M:%SZ")
+            latest_start_filter = f'&& (!BOUND(?start_date) || ?start_date <= "{latest_str}"^^xsd:dateTime)'
+        else:
+            latest_start_filter = ""
+
+        return dedent(
+            f"""
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+            SELECT ?mayor ?mayorLabel ?start_date ?end_date WHERE {{
+              ?mayor p:P39 ?statement.
+              ?statement ps:P39 wd:Q785304.
+              ?mayor wdt:P31 wd:Q5.
+              OPTIONAL {{ ?statement pq:P580 ?start_date. }}
+              OPTIONAL {{ ?statement pq:P582 ?end_date. }}
+              SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
+              FILTER (
+                (
+                  (BOUND(?start_date) && ?start_date >= "{earliest_str}"^^xsd:dateTime)
+                  || (BOUND(?end_date) && ?end_date >= "{earliest_str}"^^xsd:dateTime)
+                )
+                {latest_start_filter}
+              )
+            }}
+            """
+        ).strip()
+
+    def normalize_results(self, data: dict[str, Any]) -> pd.DataFrame:
+        mayor_df = pd.json_normalize(data["results"]["bindings"])
+        if mayor_df.empty:
+            return pd.DataFrame(columns=MAYOR_COLUMNS)
+
+        mayor_df = mayor_df.rename(columns={"mayorLabel.value": "full_name"})
+        mayor_df["start_date"] = pd.to_datetime(
+            mayor_df["start_date.value"], errors="coerce", utc=True
+        )
+        mayor_df["end_date"] = pd.to_datetime(
+            mayor_df["end_date.value"], errors="coerce", utc=True
+        )
+        mayor_df["start_date"] = mayor_df["start_date"].dt.tz_convert(None)
+        mayor_df["end_date"] = mayor_df["end_date"].dt.tz_convert(None)
+        # Sort so the snapshot doesn't change when the data doesn't.
+        return mayor_df[MAYOR_COLUMNS].sort_values(
+            ["start_date", "full_name"], ignore_index=True
+        )
+
+    def load(
+        self, earliest: pd.Timestamp, dataset_last_updated: pd.Timestamp | None
+    ) -> pd.DataFrame:
+        query = self.build_query(earliest, dataset_last_updated)
+        response = httpx.get(self.url, params={"query": query}, headers=self.headers)
+        response.raise_for_status()
+        return self.normalize_results(response.json())
 
 
 class RouteRepository:
@@ -121,10 +194,13 @@ class RouteRepository:
             map_routes[column] = map_routes[column].dt.strftime("%Y-%m-%d")
         dataset_last_updated = self.fetch_dataset_last_updated(metadata)
         center_lat, center_lon = self.get_map_center(projected)
+        earliest, _ = RouteSnapshotRepository().get_route_date_range(temporal)
+        mayors = MayorRepository().load(earliest, dataset_last_updated)
 
         data_dir.mkdir(exist_ok=True)
         temporal[ROUTE_COLUMNS].to_parquet(data_dir / ROUTES_FILE, index=False)
         (data_dir / MAP_ROUTES_FILE).write_text(map_routes.to_json(drop_id=True))
+        mayors.to_csv(data_dir / MAYORS_FILE, index=False, date_format="%Y-%m-%d")
         snapshot_metadata = {
             "dataset_last_updated": (
                 dataset_last_updated.isoformat()
