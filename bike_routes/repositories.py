@@ -64,8 +64,14 @@ class RouteRepository:
         projected: GeoDataFrame,
         tolerance_feet: float = MAP_SIMPLIFY_TOLERANCE_FEET,
     ) -> GeoDataFrame:
+        # Combine segments that appear and disappear together, so the map has far fewer features to draw.
+        keys = ["instdate", "ret_date", "facilitycl"]
+        simplified = projected[keys + ["geometry"]].dissolve(
+            by=keys, dropna=False, as_index=False
+        )
+        # Join adjacent segments into longer lines, which simplify further.
+        simplified["geometry"] = simplified.geometry.line_merge()
         # Simplify route coordinates in projected units before converting back to WGS84.
-        simplified = projected.copy()
         simplified["geometry"] = simplified.geometry.simplify(
             tolerance=tolerance_feet,
             preserve_topology=True,
