@@ -176,49 +176,54 @@ class RouteRepository:
 
         This matches on location rather than street segment IDs, since a street is sometimes split into different segments when it's redone."""
         # in feet
-        projected = temporal.to_crs(epsg=2263)
-        retired = projected.loc[
-            projected["ret_date"].notna(), ["ret_date", "facilitycl", "geometry"]
-        ]
-        retired["geometry"] = retired.buffer(REPLACEMENT_DISTANCE_FEET)
-        pairs = (
-            projected[["instdate", "geometry"]]
-            .reset_index(names="new")
-            .sjoin(retired.reset_index(names="old"), predicate="intersects")
+        routes = temporal.geometry.to_crs(epsg=2263)
+        retired_areas = routes[temporal["ret_date"].notna()].buffer(
+            REPLACEMENT_DISTANCE_FEET
         )
-        pairs["gap"] = (pairs["instdate"] - pairs["ret_date"]).abs()
+
+        # each route with the ones retired near it, around when it was installed
+        new_positions, old_positions = retired_areas.sindex.query(
+            routes, predicate="intersects"
+        )
+        pairs = pd.DataFrame(
+            {
+                "new": routes.index[new_positions],
+                "old": retired_areas.index[old_positions],
+            }
+        )
+        pairs["gap"] = abs(
+            temporal["instdate"].loc[pairs["new"]].values
+            - temporal["ret_date"].loc[pairs["old"]].values
+        )
         pairs = pairs[
             (pairs["new"] != pairs["old"]) & (pairs["gap"] <= REPLACEMENT_WINDOW)
         ]
 
-        # how much of each new route is covered by the ones retired around then, which may have been split up differently
+        # skip routes that are mostly somewhere new, combining the retired ones since they may have been split up differently
         retired_nearby = (
             GeoDataFrame(
-                {"new": pairs["new"]},
-                geometry=retired.geometry.loc[pairs["old"]].values,
-                crs=retired.crs,
+                pairs[["new"]], geometry=retired_areas.loc[pairs["old"]].values
             )
             .dissolve(by="new")
             .geometry
         )
-        new_routes = projected.geometry.loc[retired_nearby.index]
+        new_routes = routes.loc[retired_nearby.index]
         overlap = new_routes.intersection(retired_nearby).length / new_routes.length
-        pairs = pairs[
-            pairs["new"].isin(overlap.index[overlap >= REPLACEMENT_MIN_OVERLAP])
-        ]
+        pairs = pairs[pairs["new"].map(overlap) >= REPLACEMENT_MIN_OVERLAP]
 
         # if multiple were retired around then, use the closest in time, then the closest in shape
         pairs["distance"] = (
-            projected.geometry.loc[pairs["new"]]
-            .hausdorff_distance(projected.geometry.loc[pairs["old"]], align=False)
+            routes.loc[pairs["new"]]
+            .hausdorff_distance(routes.loc[pairs["old"]], align=False)
             .values
         )
-        replaced = (
-            pairs.sort_values(["gap", "distance"])
-            .drop_duplicates("new")
-            .set_index("new")
+        replaced = pairs.sort_values(["gap", "distance"]).drop_duplicates("new")
+        return (
+            temporal["facilitycl"]
+            .loc[replaced["old"]]
+            .set_axis(replaced["new"])
+            .reindex(temporal.index)
         )
-        return replaced["facilitycl"].reindex(temporal.index)
 
     def project_routes_with_lengths(self, temporal: GeoDataFrame) -> GeoDataFrame:
         projected = temporal.to_crs(epsg=2263)
