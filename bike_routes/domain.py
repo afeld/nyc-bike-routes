@@ -1,19 +1,14 @@
 from dataclasses import dataclass
+from typing import Any
 
 import pandas as pd
-from geopandas import GeoDataFrame
-
-
-def remove_timezone(series: pd.Series) -> pd.Series:
-    if getattr(series.dt, "tz", None) is not None:
-        return series.dt.tz_localize(None)
-    return series
 
 
 @dataclass
 class RouteData:
     temporal: pd.DataFrame
-    map_temporal: GeoDataFrame
+    # GeoJSON FeatureCollection
+    map_routes: dict[str, Any]
     center_lat: float
     center_lon: float
     earliest: pd.Timestamp

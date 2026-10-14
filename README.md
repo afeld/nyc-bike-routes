@@ -22,7 +22,7 @@
 The app reads a processed snapshot of the [bike routes](https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data) from [`data/`](data/), rather than downloading it from NYC Open Data on startup. A [GitHub Action](.github/workflows/update-data.yml) refreshes it daily, committing only if it changed. To refresh it yourself, such as after changing how the data is processed:
 
 ```sh
-uv run python -m bike_routes.update_data
+uv run --group data python -m bike_routes.update_data
 ```
 
 ## Testing

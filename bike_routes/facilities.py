@@ -26,6 +26,16 @@ FACILITY_STYLE = {
 DEFAULT_FACILITY_COLOR = "#6b7280"
 
 
+def normalize_facility_code(facilitycl: str | None) -> str:
+    return (facilitycl or "").strip().upper()
+
+
+def get_facility_color(facilitycl: str | None) -> str:
+    return FACILITY_STYLE.get(
+        normalize_facility_code(facilitycl), {"color": DEFAULT_FACILITY_COLOR}
+    )["color"]
+
+
 def enrich_facility_columns(df: pd.DataFrame) -> pd.DataFrame:
     enriched_df = df.copy()
     enriched_df["facilitycl_code"] = (
@@ -42,8 +52,6 @@ def enrich_facility_columns(df: pd.DataFrame) -> pd.DataFrame:
         )
     )
     enriched_df["facilitycl_color"] = enriched_df["facilitycl_code"].map(
-        lambda code: FACILITY_STYLE.get(code, {"color": DEFAULT_FACILITY_COLOR})[
-            "color"
-        ]
+        get_facility_color
     )
     return enriched_df

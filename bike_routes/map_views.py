@@ -7,7 +7,7 @@ from bike_routes.domain import RouteData
 from bike_routes.facilities import (
     FACILITY_ORDER,
     FACILITY_STYLE,
-    enrich_facility_columns,
+    get_facility_color,
 )
 
 
@@ -57,14 +57,24 @@ def get_map_style_html() -> str:
 def render_map(routes: RouteData) -> None:
     """Uses the Folium Timeline plugin."""
 
-    timeline_df = routes.map_temporal[
-        ["geometry", "instdate", "ret_date", "facilitycl"]
-    ].copy()
-    timeline_df = enrich_facility_columns(timeline_df)
-    timeline_df = timeline_df.rename(columns={"instdate": "start", "ret_date": "end"})
-    timeline_df["end"] = timeline_df["end"].fillna(routes.latest)
-    timeline_df["start"] = timeline_df["start"].dt.strftime("%Y-%m-%d")
-    timeline_df["end"] = timeline_df["end"].dt.strftime("%Y-%m-%d")
+    latest = routes.latest.strftime("%Y-%m-%d")
+    timeline_data = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": feature["geometry"],
+                "properties": {
+                    "start": feature["properties"]["instdate"],
+                    "end": feature["properties"]["ret_date"] or latest,
+                    "facilitycl_color": get_facility_color(
+                        feature["properties"]["facilitycl"]
+                    ),
+                },
+            }
+            for feature in routes.map_routes["features"]
+        ],
+    }
 
     map_object = folium.Map(
         location=[routes.center_lat, routes.center_lon],
@@ -80,7 +90,7 @@ def render_map(routes: RouteData) -> None:
     ).add_to(map_object)
 
     timeline = Timeline(
-        timeline_df,
+        timeline_data,
         style=folium.JsCode(
             """
             (feature) => {
