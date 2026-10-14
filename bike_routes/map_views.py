@@ -77,7 +77,8 @@ def render_map(routes: RouteData) -> None:
             }
         )
 
-    map_object = folium.Map(tiles=None)
+    # allow half zoom levels, so the routes fill narrow screens rather than being zoomed out by a whole level
+    map_object = folium.Map(tiles=None, zoom_snap=0.5)
     # keep the base map out of the layer control
     folium.TileLayer("Esri.WorldGrayCanvas", control=False).add_to(map_object)
 
@@ -121,12 +122,7 @@ def render_map(routes: RouteData) -> None:
         date_options="YYYY",
     ).add_timelines(*timelines).add_to(map_object)
 
-    # leave room for the timeline slider along the bottom
-    map_object.fit_bounds(
-        get_bounds(map_object),
-        padding_top_left=(10, 10),
-        padding_bottom_right=(10, 80),
-    )
+    map_object.fit_bounds(get_bounds(map_object))
 
     folium.LayerControl(position="topright", collapsed=False).add_to(map_object)
 
