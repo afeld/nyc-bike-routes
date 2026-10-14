@@ -12,10 +12,8 @@ def remove_timezone(series: pd.Series) -> pd.Series:
 
 @dataclass
 class RouteData:
-    raw: GeoDataFrame
-    temporal: GeoDataFrame
+    temporal: pd.DataFrame
     map_temporal: GeoDataFrame
-    projected: GeoDataFrame
     center_lat: float
     center_lon: float
     earliest: pd.Timestamp
