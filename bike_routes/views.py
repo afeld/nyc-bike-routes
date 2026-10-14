@@ -5,7 +5,9 @@ from bike_routes.data import load_mayors
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
     FACILITY_ORDER,
-    enrich_facility_columns,
+    FACILITY_STYLE,
+    get_facility_label,
+    normalize_facility_code,
 )
 
 
@@ -31,101 +33,29 @@ def render_yearly_miles(routes: RouteData) -> None:
     st.line_chart(yearly_miles, x="Year", y="Miles added")
 
 
-def _miles_by_facility_at_cutoff(
-    temporal_df: pd.DataFrame,
-    cutoff: pd.Timestamp,
-) -> pd.DataFrame:
-    was_previously_installed = temporal_df["instdate"] < cutoff
-    still_exists = temporal_df["ret_date"].isna() | (temporal_df["ret_date"] >= cutoff)
-
-    return (
-        temporal_df.loc[was_previously_installed & still_exists]
-        .groupby(["facilitycl_code", "facilitycl_label", "facilitycl_color"])[
-            ["length_miles"]
-        ]
-        .sum()
-        .reset_index()
-        .rename(columns={"facilitycl_label": "facilitycl", "length_miles": "miles"})
-    )
-
-
-def _build_cumulative_miles(routes: RouteData) -> pd.DataFrame:
-    year_starts = pd.date_range(routes.earliest, routes.latest, freq="YS")
-    temporal_df = enrich_facility_columns(routes.temporal)
-
-    cumulative_frames = []
-    for start in year_starts:
-        cutoff = pd.Timestamp(year=start.year, month=1, day=1)
-        miles_by_facility = _miles_by_facility_at_cutoff(temporal_df, cutoff).assign(
-            year=start
-        )
-        cumulative_frames.append(miles_by_facility)
-
-    if not cumulative_frames:
-        return pd.DataFrame(
-            columns=[
-                "year",
-                "facilitycl",
-                "facilitycl_code",
-                "facilitycl_color",
-                "miles",
-            ]
-        )
-
-    return pd.concat(cumulative_frames, ignore_index=True)[
-        ["year", "facilitycl", "facilitycl_code", "facilitycl_color", "miles"]
-    ]
-
-
-def _ordered_facility_classes(cumulative_df: pd.DataFrame) -> list[str]:
-    facility_order_lookup = {
-        facility_code: i for i, facility_code in enumerate(FACILITY_ORDER)
-    }
-    unique_facility_classes = cumulative_df[
-        ["facilitycl", "facilitycl_code"]
-    ].drop_duplicates()
-    return unique_facility_classes.sort_values(
-        by=["facilitycl_code", "facilitycl"],
-        key=lambda series: series.map(facility_order_lookup).fillna(
-            len(FACILITY_ORDER)
-        ),
-    )["facilitycl"].tolist()
-
-
 def render_cumulative_miles(routes: RouteData) -> None:
-    cumulative_df = _build_cumulative_miles(routes)
-
-    if cumulative_df.empty:
-        st.info("No route data is available to display network size.")
-        return
-
-    ordered_facility_classes = _ordered_facility_classes(cumulative_df)
-
-    facility_colors = (
-        cumulative_df[["facilitycl", "facilitycl_color"]]
-        .dropna(subset=["facilitycl_color"])
-        .drop_duplicates(subset=["facilitycl"])
-        .set_index("facilitycl")["facilitycl_color"]
-        .to_dict()
+    facility_codes = (
+        routes.temporal["facilitycl"].fillna("").map(normalize_facility_code)
     )
-    stacked_miles = (
-        cumulative_df.pivot_table(
-            index="year",
-            columns="facilitycl",
-            values="miles",
-            aggfunc="sum",
-        )
-        .reindex(columns=ordered_facility_classes)
-        .fillna(0)
-    )
-    chart_colors = [
-        facility_colors.get(facility, "gray") for facility in ordered_facility_classes
-    ]
+    unknown_codes = sorted(set(facility_codes) - set(FACILITY_ORDER))
+    if unknown_codes:
+        unknown_list = ", ".join(code or "(blank)" for code in unknown_codes)
+        st.warning(f"Excluding routes with unknown facility types: {unknown_list}")
+
+    year_starts = pd.date_range(routes.earliest, routes.latest, freq="YS")
+    stacked_miles = pd.DataFrame(
+        {
+            year: routes.existing_at(year)
+            .groupby(facility_codes)["length_miles"]
+            .sum()
+            for year in year_starts
+        }
+    ).T.reindex(columns=FACILITY_ORDER).fillna(0)
+    stacked_miles.columns = [get_facility_label(code) for code in FACILITY_ORDER]
 
     st.area_chart(
         stacked_miles,
-        y=ordered_facility_classes,
-        color=chart_colors,
+        color=[FACILITY_STYLE[code]["color"] for code in FACILITY_ORDER],
         stack=True,
         x_label="Year",
         y_label="Miles",

@@ -5,22 +5,18 @@ from folium.plugins.timeline import Timeline, TimelineSlider
 
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
-    DEFAULT_FACILITY_COLOR,
     FACILITY_ORDER,
-    FACILITY_STYLE,
     get_facility_color,
+    get_facility_label,
     normalize_facility_code,
 )
 
 
 def get_layer_name(facility_code: str) -> str:
     """HTML for the layer control, which doubles as the legend."""
-    style = FACILITY_STYLE.get(facility_code)
-    color = style["color"] if style else DEFAULT_FACILITY_COLOR
-    name = style["name"] if style else "Other"
     return (
-        f'<span class="swatch" style="color: {color};">&#9632;</span> '
-        f"{name} ({facility_code})"
+        f'<span class="swatch" style="color: {get_facility_color(facility_code)};">'
+        f"&#9632;</span> {get_facility_label(facility_code)}"
     )
 
 

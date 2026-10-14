@@ -35,15 +35,13 @@ class RouteData:
             return "Unknown"
         return self.dataset_last_updated.strftime("%Y-%m-%d")
 
-    def miles_in_year(self, year: int) -> float:
-        cutoff = pd.Timestamp(year=year, month=1, day=1)
+    def existing_at(self, cutoff: pd.Timestamp) -> pd.DataFrame:
+        """Routes that were installed before the cutoff and not yet removed."""
         was_previously_installed = self.temporal["instdate"] < cutoff
         still_exists = self.temporal["ret_date"].isna() | (
             self.temporal["ret_date"] >= cutoff
         )
-        return self.temporal.loc[
-            was_previously_installed & still_exists, "length_miles"
-        ].sum()
+        return self.temporal.loc[was_previously_installed & still_exists]
 
     def miles_during_administration(self, row: pd.Series) -> float:
         start = row["start_date"]

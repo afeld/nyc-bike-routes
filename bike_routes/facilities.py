@@ -1,5 +1,3 @@
-import pandas as pd
-
 FACILITY_ORDER = ["I", "II", "III", "L"]
 # names come from the data dictionary:
 # https://data.cityofnewyork.us/dataset/New-York-City-Bike-Routes/mzxg-pwib/about_data
@@ -36,22 +34,6 @@ def get_facility_color(facilitycl: str | None) -> str:
     )["color"]
 
 
-def enrich_facility_columns(df: pd.DataFrame) -> pd.DataFrame:
-    enriched_df = df.copy()
-    enriched_df["facilitycl_code"] = (
-        enriched_df["facilitycl"].fillna("").astype(str).str.strip().str.upper()
-    )
-    enriched_df["facilitycl_name"] = enriched_df["facilitycl_code"].map(
-        lambda code: FACILITY_STYLE.get(code, {"name": "Other"})["name"]
-    )
-    enriched_df["facilitycl_label"] = enriched_df["facilitycl_code"].map(
-        lambda code: (
-            f"{FACILITY_STYLE[code]['name']} ({code})"
-            if code in FACILITY_STYLE
-            else f"Other ({code})"
-        )
-    )
-    enriched_df["facilitycl_color"] = enriched_df["facilitycl_code"].map(
-        get_facility_color
-    )
-    return enriched_df
+def get_facility_label(facility_code: str) -> str:
+    style = FACILITY_STYLE.get(facility_code, {"name": "Other"})
+    return f"{style['name']} ({facility_code})"
