@@ -7,6 +7,21 @@ st.set_page_config(
     page_icon="🚲",
     layout="wide",
 )
+# leave less space above the map on phones
+st.html(
+    """
+    <style>
+        @media (max-width: 640px) {
+            [data-testid="stMainBlockContainer"] {
+                padding-top: 4rem;
+            }
+            [data-testid="stMainBlockContainer"] [data-testid="stHeading"] h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+    """
+)
 
 
 def main() -> None:

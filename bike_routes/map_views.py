@@ -61,6 +61,23 @@ def get_map_style_html() -> str:
             .leaflet-timeline-control .button-container button::after {
                 box-sizing: content-box;
             }
+            /* put the year beside the button rather than under it, so the controls cover less of the map */
+            .leaflet-container .leaflet-control.leaflet-timeline-control {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+
+                .sldr-ctrl-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    width: auto;
+                }
+
+                input[type="range"] {
+                    flex: 1;
+                }
+            }
         </style>
         """
 
@@ -147,6 +164,19 @@ def render_map(routes: RouteData) -> None:
     # make the date larger
     root.header.add_child(Element(get_map_style_html()))
 
+    # fill the rest of the screen on phones
+    st.html(
+        """
+        <style>
+            @media (max-width: 640px) {
+                [data-testid="stElementContainer"]:has(> [data-testid="stIFrame"]) {
+                    flex-basis: calc(100svh - 9rem);
+                    height: calc(100svh - 9rem);
+                }
+            }
+        </style>
+        """
+    )
     st.iframe(map_object.get_root().render(), height=500)
 
 
