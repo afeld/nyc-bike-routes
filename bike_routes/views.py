@@ -219,6 +219,14 @@ def render_mayors(routes: RouteData) -> None:
         routes.miles_during_administration,
         axis=1,
     )
+    # the current mayor's term runs through the latest data
+    years_in_office = (
+        mayor_df["end_date"].fillna(routes.latest) - mayor_df["start_date"]
+    ).dt.days / 365.25
+    # a mayor who served less than a day installed nothing, which would otherwise be 0 / 0
+    mayor_df["miles_per_year"] = (mayor_df["miles_installed"] / years_in_office).fillna(
+        0
+    )
 
     st.bar_chart(
         mayor_df,
@@ -236,11 +244,20 @@ def render_mayors(routes: RouteData) -> None:
     st.dataframe(
         mayor_df.sort_values("miles_installed", ascending=False),
         hide_index=True,
-        column_order=["full_name", "start_date", "end_date", "miles_installed"],
+        column_order=[
+            "full_name",
+            "start_date",
+            "end_date",
+            "miles_installed",
+            "miles_per_year",
+        ],
         column_config={
             "full_name": "Name",
             "start_date": st.column_config.DateColumn("Term start", format="YYYY"),
             "end_date": st.column_config.DateColumn("Term end", format="YYYY"),
             "miles_installed": "Miles installed",
+            "miles_per_year": st.column_config.NumberColumn(
+                "Miles per year in office", format="%.1f"
+            ),
         },
     )
