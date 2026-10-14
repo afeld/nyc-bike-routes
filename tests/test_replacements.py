@@ -4,7 +4,7 @@ import pandas as pd
 from geopandas import GeoDataFrame
 from shapely import LineString
 
-from bike_routes.update_data import RouteRepository, normalize_street
+from bike_routes.replacements import find_replaced_facilities
 
 INSTALLED = "2020-06-01"
 
@@ -29,7 +29,7 @@ def route(
 def find_replaced(*routes: dict) -> list[str | None]:
     """The facility class each route replaced."""
     temporal = GeoDataFrame(list(routes), crs="EPSG:2263")
-    replaced = RouteRepository().find_replaced_facilities(temporal)
+    replaced = find_replaced_facilities(temporal)
     return [None if pd.isna(code) else code for code in replaced]
 
 
@@ -124,9 +124,3 @@ def test_missing_install_date() -> None:
         route(0, 1000, "II", ret_date=INSTALLED),
         route(0, 1000, "I", instdate=None),
     ) == [None, None]
-
-
-def test_normalize_street() -> None:
-    assert normalize_street("Park Avenue") == "PARK AV"
-    assert normalize_street("  w 4  street ") == "W 4 ST"
-    assert normalize_street(None) == ""

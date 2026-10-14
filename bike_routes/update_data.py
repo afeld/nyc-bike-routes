@@ -2,181 +2,39 @@
 
 import json
 from pathlib import Path
-from textwrap import dedent
 from typing import Any
 
 import httpx
 import pandas as pd
-from geopandas import GeoDataFrame, GeoSeries
+from geopandas import GeoDataFrame
 
+from bike_routes.replacements import find_replaced_facilities
 from bike_routes.repositories import (
     DATA_DIR,
     MAP_DATE_COLUMNS,
     MAP_ROUTES_FILE,
-    MAYOR_COLUMNS,
     MAYORS_FILE,
     METADATA_FILE,
     ROUTE_COLUMNS,
     ROUTES_FILE,
     RouteSnapshotRepository,
 )
+from bike_routes.streets import normalize_street
+from bike_routes.wikidata import MayorRepository
 
 DATA_URL = (
     "https://data.cityofnewyork.us/api/views/mzxg-pwib/rows.geojson?accessType=DOWNLOAD"
 )
 DATASET_METADATA_URL = "https://data.cityofnewyork.us/api/views/mzxg-pwib.json"
-WIKIDATA_URL = "https://query.wikidata.org/sparql"
 DATE_COLUMNS = [":created_at", "ret_date", "instdate"]
 MAP_SIMPLIFY_TOLERANCE_FEET = 30.0
 MAP_COORDINATE_PRECISION_DEGREES = 1e-5
-# How far apart a retirement and an installation in the same place can be, for the new facility to count as replacing the old one.
-REPLACEMENT_WINDOW = pd.Timedelta(days=60)
-# How close a retired route needs to be to a new one to count as in the same place, allowing for the lines being drawn on different sides of the street.
-REPLACEMENT_DISTANCE_FEET = 50.0
-# How much of a new route needs to be in the same place as retired ones, for it to count as replacing them.
-REPLACEMENT_MIN_OVERLAP = 0.8
-# The data spells street types inconsistently, e.g. "PARK AV" and "PARK AVENUE".
-STREET_TYPE_ABBREVIATIONS = {
-    "AVENUE": "AV",
-    "AVE": "AV",
-    "STREET": "ST",
-    "BOULEVARD": "BLVD",
-    "BL": "BLVD",
-    "ROAD": "RD",
-    "PARKWAY": "PKWY",
-    "PLACE": "PL",
-    "DRIVE": "DR",
-}
 
 
 def remove_timezone(series: pd.Series) -> pd.Series:
     if getattr(series.dt, "tz", None) is not None:
         return series.dt.tz_localize(None)
     return series
-
-
-def normalize_street(street: str | None) -> str:
-    words = (street or "").upper().split()
-    if words:
-        words[-1] = STREET_TYPE_ABBREVIATIONS.get(words[-1], words[-1])
-    return " ".join(words)
-
-
-def pair_with_retired_routes(
-    temporal: pd.DataFrame, routes: GeoSeries, retired_areas: GeoSeries
-) -> pd.DataFrame:
-    """Each route with the ones retired near it, around when it was installed. Returns the indexes of the `new` and `old` routes, and the `gap` between the installation and retirement."""
-    new_positions, old_positions = retired_areas.sindex.query(
-        routes, predicate="intersects"
-    )
-    pairs = pd.DataFrame(
-        {
-            "new": routes.index[new_positions],
-            "old": retired_areas.index[old_positions],
-        }
-    )
-    pairs["gap"] = abs(
-        temporal["instdate"].loc[pairs["new"]].to_numpy()
-        - temporal["ret_date"].loc[pairs["old"]].to_numpy()
-    )
-    return pairs[(pairs["new"] != pairs["old"]) & (pairs["gap"] <= REPLACEMENT_WINDOW)]
-
-
-def get_overlap(
-    routes: GeoSeries, retired_areas: GeoSeries, pairs: pd.DataFrame
-) -> pd.Series:
-    """The fraction of each new route that's covered by the retired ones it's paired with. They're combined, since they may have been split up differently."""
-    retired_nearby = (
-        GeoDataFrame(pairs[["new"]], geometry=retired_areas.loc[pairs["old"]].values)
-        .dissolve(by="new")
-        .geometry
-    )
-    new_routes = GeoSeries(routes.loc[retired_nearby.index])
-    return new_routes.intersection(retired_nearby).length / new_routes.length
-
-
-def choose_closest(routes: GeoSeries, pairs: pd.DataFrame) -> pd.DataFrame:
-    """If multiple routes were retired around when a new one was installed, use the closest in time, then the closest in shape."""
-    distance = (
-        GeoSeries(routes.loc[pairs["new"]])
-        .hausdorff_distance(GeoSeries(routes.loc[pairs["old"]]), align=False)
-        .to_numpy()
-    )
-    return (
-        pairs.assign(distance=distance)
-        .sort_values(["gap", "distance"])
-        .drop_duplicates("new")
-    )
-
-
-class MayorRepository:
-    def __init__(self, url: str = WIKIDATA_URL) -> None:
-        self.url = url
-        self.headers = {
-            "Accept": "application/sparql-results+json",
-            "User-Agent": "BikeRoutes/0.0 (https://afeld.me/; aidan.feldman@gmail.com)",
-        }
-
-    def build_query(
-        self, earliest: pd.Timestamp, dataset_last_updated: pd.Timestamp | None
-    ) -> str:
-        earliest_str = earliest.strftime("%Y-%m-%dT%H:%M:%SZ")
-        if pd.notna(dataset_last_updated):
-            latest_str = dataset_last_updated.strftime("%Y-%m-%dT%H:%M:%SZ")
-            latest_start_filter = f'&& (!BOUND(?start_date) || ?start_date <= "{latest_str}"^^xsd:dateTime)'
-        else:
-            latest_start_filter = ""
-
-        return dedent(
-            f"""
-            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-            SELECT ?mayor ?mayorLabel ?start_date ?end_date WHERE {{
-              ?mayor p:P39 ?statement.
-              ?statement ps:P39 wd:Q785304.
-              ?mayor wdt:P31 wd:Q5.
-              OPTIONAL {{ ?statement pq:P580 ?start_date. }}
-              OPTIONAL {{ ?statement pq:P582 ?end_date. }}
-              SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
-              FILTER (
-                (
-                  (BOUND(?start_date) && ?start_date >= "{earliest_str}"^^xsd:dateTime)
-                  || (BOUND(?end_date) && ?end_date >= "{earliest_str}"^^xsd:dateTime)
-                )
-                {latest_start_filter}
-              )
-            }}
-            """
-        ).strip()
-
-    def normalize_results(self, data: dict[str, Any]) -> pd.DataFrame:
-        mayor_df = pd.json_normalize(data["results"]["bindings"])
-        if mayor_df.empty:
-            return pd.DataFrame(columns=MAYOR_COLUMNS)
-
-        mayor_df = mayor_df.rename(columns={"mayorLabel.value": "full_name"})
-        mayor_df["start_date"] = pd.to_datetime(
-            mayor_df["start_date.value"], errors="coerce", utc=True
-        )
-        mayor_df["end_date"] = pd.to_datetime(
-            mayor_df["end_date.value"], errors="coerce", utc=True
-        )
-        mayor_df["start_date"] = mayor_df["start_date"].dt.tz_convert(None)
-        mayor_df["end_date"] = mayor_df["end_date"].dt.tz_convert(None)
-        # Sort so the snapshot doesn't change when the data doesn't.
-        return mayor_df[MAYOR_COLUMNS].sort_values(
-            ["start_date", "full_name"], ignore_index=True
-        )
-
-    def load(
-        self, earliest: pd.Timestamp, dataset_last_updated: pd.Timestamp | None
-    ) -> pd.DataFrame:
-        query = self.build_query(earliest, dataset_last_updated)
-        response = httpx.get(
-            self.url, params={"query": query}, headers=self.headers, timeout=30.0
-        )
-        response.raise_for_status()
-        return self.normalize_results(response.json())
 
 
 class RouteRepository:
@@ -209,31 +67,8 @@ class RouteRepository:
         temporal["instdate"] = remove_timezone(temporal["instdate"])
         temporal["ret_date"] = remove_timezone(temporal["ret_date"])
         temporal["street"] = temporal["street"].map(normalize_street)
-        temporal["replaced_facilitycl"] = self.find_replaced_facilities(temporal)
+        temporal["replaced_facilitycl"] = find_replaced_facilities(temporal)
         return temporal
-
-    def find_replaced_facilities(self, temporal: pd.DataFrame) -> pd.Series:
-        """The facility class that each route replaced, i.e. the one retired from the same place around when the route was installed. Missing for routes that were new.
-
-        This matches on location rather than street segment IDs, since a street is sometimes split into different segments when it's redone."""
-        # in feet
-        routes = temporal.geometry.to_crs(epsg=2263)
-        retired_areas = routes[temporal["ret_date"].notna()].buffer(
-            REPLACEMENT_DISTANCE_FEET
-        )
-
-        pairs = pair_with_retired_routes(temporal, routes, retired_areas)
-        overlap = get_overlap(routes, retired_areas, pairs)
-        # skip routes that are mostly somewhere new
-        pairs = pairs[pairs["new"].map(overlap) >= REPLACEMENT_MIN_OVERLAP]
-        replaced = choose_closest(routes, pairs)
-
-        return (
-            temporal["facilitycl"]
-            .loc[replaced["old"]]
-            .set_axis(replaced["new"])
-            .reindex(temporal.index)
-        )
 
     def project_routes_with_lengths(self, temporal: GeoDataFrame) -> GeoDataFrame:
         projected = temporal.to_crs(epsg=2263)

@@ -1,7 +1,7 @@
 import streamlit as st
 
 from bike_routes.data import load_routes
-from bike_routes.views import render_mayors
+from bike_routes.views.mayors import render_mayors
 
 st.subheader("Mayoral administrations")
 st.markdown(

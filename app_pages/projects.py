@@ -1,7 +1,7 @@
 import streamlit as st
 
 from bike_routes.data import load_routes
-from bike_routes.views import render_projects
+from bike_routes.views.projects import render_projects
 
 st.subheader("Projects")
 st.markdown(
