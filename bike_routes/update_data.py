@@ -100,7 +100,9 @@ class MayorRepository:
         self, earliest: pd.Timestamp, dataset_last_updated: pd.Timestamp | None
     ) -> pd.DataFrame:
         query = self.build_query(earliest, dataset_last_updated)
-        response = httpx.get(self.url, params={"query": query}, headers=self.headers)
+        response = httpx.get(
+            self.url, params={"query": query}, headers=self.headers, timeout=30.0
+        )
         response.raise_for_status()
         return self.normalize_results(response.json())
 
