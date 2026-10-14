@@ -13,6 +13,7 @@ dependencies = [
 dev = [
     "pandas-stubs>=3.0.3.260530",
     "pytest>=9.1.1",
+    "pytest-playwright>=0.10.0",
 ]
 
 [tool.pytest.ini_options]

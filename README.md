@@ -25,6 +25,14 @@ The snapshot combines the [bike routes](https://data.cityofnewyork.us/dataset/Ne
 
 ## Testing
 
+The tests check the data processing, and load the page in a headless browser to check that it renders. Install the browser once:
+
+```sh
+uv run playwright install chromium
+```
+
+then run:
+
 ```sh
 uv run pytest
 ```
