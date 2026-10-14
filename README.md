@@ -4,17 +4,19 @@
 
 1. Install:
    1. Python
+   1. [Node.js](https://nodejs.org/)
    1. [uv](https://docs.astral.sh/uv/getting-started/installation/)
 1. Install dependencies.
 
    ```sh
    uv sync
+   npm install
    ```
 
-1. Run the Streamlit app.
+1. Preview the [Observable Framework](https://observablehq.com/framework/) site, which reloads as you edit. A [GitHub Action](.github/workflows/deploy.yml) builds and deploys it to GitHub Pages. The [data loaders](https://observablehq.com/framework/data-loaders) in `src/data/` compute what each chart needs from the snapshot. Framework only reruns a loader when its own file changes, so after changing the data or `bike_routes/`, run `npm run clean` and restart the preview.
 
    ```sh
-   uv run streamlit run app.py
+   npm run dev
    ```
 
 ## Data
@@ -27,8 +29,9 @@ uv run --group data python -m bike_routes.update_data
 
 ## Testing
 
-Run each page of the app and check for errors:
+Build the site and check each page for errors in a headless browser, which you install once:
 
 ```sh
+uv run playwright install chromium
 uv run pytest
 ```
