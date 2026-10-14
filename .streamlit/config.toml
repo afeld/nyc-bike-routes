@@ -1,3 +1,0 @@
-[server]
-# The map is sent as a large HTML page, which compresses well.
-enableWebsocketCompression = true

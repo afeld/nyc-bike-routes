@@ -1,8 +1,6 @@
 import altair as alt
 import pandas as pd
-import streamlit as st
 
-from bike_routes.data import load_mayors
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
     FACILITY_ORDER,
@@ -12,7 +10,7 @@ from bike_routes.facilities import (
 )
 
 
-def render_yearly_miles(routes: RouteData) -> None:
+def yearly_miles_chart(routes: RouteData) -> alt.Chart:
     yearly_miles = (
         routes.temporal.set_index("instdate")
         .resample("YS")["length_miles"]
@@ -20,24 +18,31 @@ def render_yearly_miles(routes: RouteData) -> None:
         .reset_index()
     )
     yearly_miles["year"] = yearly_miles["instdate"].dt.year
-    yearly_miles = yearly_miles.rename(
-        columns={
-            "year": "Year",
-            "length_miles": "Miles added",
-        }
+
+    return (
+        alt.Chart(yearly_miles[["year", "length_miles"]])
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("year:Q", title="Year", axis=alt.Axis(format="d")),
+            y=alt.Y("length_miles:Q", title="Miles added"),
+            tooltip=[
+                alt.Tooltip("year:Q", title="Year", format="d"),
+                alt.Tooltip("length_miles:Q", title="Miles added", format=",.1f"),
+            ],
+        )
+        .properties(width="container", height=350)
     )
 
-    st.line_chart(yearly_miles, x="Year", y="Miles added")
 
-
-def render_cumulative_miles(routes: RouteData) -> None:
+def network_size_chart(routes: RouteData) -> alt.Chart:
     facility_codes = (
         routes.temporal["facilitycl"].fillna("").map(normalize_facility_code)
     )
     unknown_codes = sorted(set(facility_codes) - set(FACILITY_ORDER))
+    title = ""
     if unknown_codes:
         unknown_list = ", ".join(code or "(blank)" for code in unknown_codes)
-        st.warning(f"Excluding routes with unknown facility types: {unknown_list}")
+        title = f"Excluding routes with unknown facility types: {unknown_list}"
 
     year_starts = pd.date_range(routes.earliest, routes.latest, freq="YS")
     stacked_miles = pd.DataFrame(
@@ -50,7 +55,6 @@ def render_cumulative_miles(routes: RouteData) -> None:
     ).T.reindex(columns=FACILITY_ORDER).fillna(0)
     stacked_miles.columns = [get_facility_label(code) for code in FACILITY_ORDER]
     labels = stacked_miles.columns.tolist()
-
     # clicking a type in the legend hides/shows it, starting with all of them shown
     visible = alt.selection_point(
         fields=["facilitycl"],
@@ -58,11 +62,13 @@ def render_cumulative_miles(routes: RouteData) -> None:
         toggle="true",
         value=[{"facilitycl": label} for label in labels],
     )
-    chart = (
+
+    return (
         alt.Chart(
             stacked_miles.rename_axis("year")
             .reset_index()
-            .melt(id_vars="year", var_name="facilitycl", value_name="miles")
+            .melt(id_vars="year", var_name="facilitycl", value_name="miles"),
+            title=title,
         )
         .mark_area()
         .encode(
@@ -89,47 +95,57 @@ def render_cumulative_miles(routes: RouteData) -> None:
         .transform_calculate(order=f"indexof({labels!r}, datum.facilitycl)")
         .add_params(visible)
         .transform_filter(visible)
-        # fit the width to the page, but make the height the plot's, so the legend below doesn't shrink it
-        .properties(
-            height=300, autosize=alt.AutoSizeParams(type="fit-x", contains="padding")
+        .properties(width="container", height=350)
+    )
+
+
+def mayors_with_miles(routes: RouteData, mayors: pd.DataFrame) -> pd.DataFrame:
+    return mayors.assign(
+        miles_installed=mayors.apply(routes.miles_during_administration, axis=1)
+        if not mayors.empty
+        else pd.Series(dtype=float)
+    )
+
+
+def mayors_chart(mayors: pd.DataFrame) -> alt.Chart:
+    most_recent_first = mayors.sort_values("start_date", ascending=False)[
+        "full_name"
+    ].tolist()
+    return (
+        alt.Chart(mayors[["full_name", "miles_installed"]])
+        .mark_bar()
+        .encode(
+            x=alt.X("miles_installed:Q", title="Miles installed"),
+            y=alt.Y(
+                "full_name:N",
+                title="Mayor (most recent first)",
+                sort=most_recent_first,
+            ),
+            tooltip=[
+                alt.Tooltip("full_name:N", title="Mayor"),
+                alt.Tooltip("miles_installed:Q", title="Miles installed", format=",.1f"),
+            ],
         )
-    )
-    st.altair_chart(chart)
-
-
-def render_mayors(routes: RouteData) -> None:
-    mayor_df = load_mayors()
-
-    if mayor_df.empty:
-        st.info("No mayor data was returned.")
-        return
-
-    mayor_df["miles_installed"] = mayor_df.apply(
-        routes.miles_during_administration,
-        axis=1,
+        .properties(width="container", height=800)
     )
 
-    st.bar_chart(
-        mayor_df,
-        x="full_name",
-        y="miles_installed",
-        horizontal=True,
-        height=800,
-        x_label="Mayor (most recent first)",
-        y_label="Miles installed",
-        sort="-start_date",
-    )
 
-    st.subheader("Top installers")
-
-    st.dataframe(
-        mayor_df.sort_values("miles_installed", ascending=False),
-        hide_index=True,
-        column_order=["full_name", "start_date", "end_date", "miles_installed"],
-        column_config={
-            "full_name": "Name",
-            "start_date": st.column_config.DateColumn("Term start", format="YYYY"),
-            "end_date": st.column_config.DateColumn("Term end", format="YYYY"),
-            "miles_installed": "Miles installed",
-        },
+def top_installers_table(mayors: pd.DataFrame) -> pd.DataFrame:
+    return (
+        mayors[["full_name", "start_date", "end_date", "miles_installed"]]
+        .sort_values("miles_installed", ascending=False)
+        .assign(
+            # years only
+            start_date=mayors["start_date"].dt.year.astype("Int64"),
+            end_date=mayors["end_date"].dt.year.astype("Int64"),
+            miles_installed=mayors["miles_installed"].round(1),
+        )
+        .rename(
+            columns={
+                "full_name": "Name",
+                "start_date": "Term start",
+                "end_date": "Term end",
+                "miles_installed": "Miles installed",
+            }
+        )
     )

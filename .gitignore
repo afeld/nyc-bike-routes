@@ -4,3 +4,6 @@ __pycache__/
 
 # Streamlit agent skills (environment-specific symlinks)
 .agents/skills/developing-with-streamlit
+
+# built static site
+site/
