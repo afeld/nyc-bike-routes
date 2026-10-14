@@ -1,5 +1,4 @@
 import folium
-import streamlit as st
 from branca.element import Element
 from folium.plugins.timeline import Timeline, TimelineSlider
 
@@ -40,7 +39,7 @@ def get_map_style_html() -> str:
         """
 
 
-def render_map(routes: RouteData) -> None:
+def build_map(routes: RouteData) -> folium.Map:
     """Uses the Folium Timeline plugin."""
 
     latest = routes.latest.strftime("%Y-%m-%d")
@@ -117,4 +116,4 @@ def render_map(routes: RouteData) -> None:
     # make the date larger
     root.header.add_child(Element(get_map_style_html()))
 
-    st.iframe(map_object.get_root().render(), height=500)
+    return map_object
