@@ -3,35 +3,34 @@
 from typing import cast
 
 import folium
-from folium.elements import JSCSSMixin
-from folium.template import Template
 from folium.utilities import TypeBounds
 
+# Free key for NYC's map tiles, from https://api-portal.nyc.gov (the "GeoServer Tile Service User" product). It's visible in the page anyway, since it's part of each tile's URL.
+NYC_API_KEY = "4e037ecaa17d47c8ac52942761633271"
 
-class Basemap(JSCSSMixin):
-    """An OpenStreetMap basemap, drawn in the browser from vector tiles, so it's sharp on high-resolution screens. The tiles are read straight from a PMTiles archive of the whole planet, which only downloads the parts that are shown."""
 
-    _template = Template(
-        """
-        {% macro script(this, kwargs) %}
-            protomapsL.leafletLayer({
-                url: "https://data.source.coop/protomaps/openstreetmap/v4.pmtiles",
-                flavor: "white",
-                lang: "en",
-                attribution: '<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
-            }).addTo({{ this._parent.get_name() }});
-        {% endmacro %}
-        """
-    )
+class Basemap(folium.TileLayer):
+    """NYC's own basemap, with parks, streets, and buildings. See https://finder.nyc.gov/nyc-lib/tiles/."""
 
     def __init__(self) -> None:
-        super().__init__()
-        self.default_js = [
-            (
-                "protomaps-leaflet",
-                "https://cdn.jsdelivr.net/npm/protomaps-leaflet@5.1.0/dist/protomaps-leaflet.js",
-            )
-        ]
+        super().__init__(
+            tiles=(
+                "https://api.nyc.gov/geoserver/gwc/service/tms/1.0.0/carto%3Abasemap@EPSG%3A900913@jpg/{z}/{x}/{y}.jpg"
+                f"?Key={NYC_API_KEY}"
+            ),
+            attr='© <a href="https://www.nyc.gov/">City of New York</a>',
+            name="Basemap",
+            # keep it out of the layer control
+            control=False,
+            tms=True,
+            min_native_zoom=8,
+            max_zoom=19,
+            max_native_zoom=19,
+            # the extent of the tiles
+            bounds=[[39.3682, -75.9374], [42.0329, -71.7187]],
+            # sharper on high-resolution screens, by using tiles from a zoom level further in
+            detect_retina=True,
+        )
 
 
 def get_bounds(map_object: folium.Map) -> TypeBounds:
