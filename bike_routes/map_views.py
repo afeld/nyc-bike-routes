@@ -128,3 +128,21 @@ def render_map(routes: RouteData) -> None:
     root.header.add_child(Element(get_map_style_html()))
 
     st.iframe(map_object.get_root().render(), height=500)
+
+
+def render_features_map(features: list[dict]) -> None:
+    """A static map of the given routes, zoomed to fit them."""
+
+    map_object = folium.Map(tiles=None)
+    folium.TileLayer("Esri.WorldGrayCanvas").add_to(map_object)
+    folium.GeoJson(
+        {"type": "FeatureCollection", "features": features},
+        style_function=lambda feature: {
+            "color": get_facility_color(feature["properties"]["facilitycl"]),
+            "weight": 5,
+            "opacity": 0.9,
+        },
+    ).add_to(map_object)
+    map_object.fit_bounds(map_object.get_bounds(), padding=(20, 20))
+
+    st.iframe(map_object.get_root().render(), height=400)

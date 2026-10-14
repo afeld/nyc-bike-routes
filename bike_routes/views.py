@@ -10,6 +10,7 @@ from bike_routes.facilities import (
     get_facility_label,
     normalize_facility_code,
 )
+from bike_routes.map_views import render_features_map
 
 NEW = "New"
 REPLACED = "Replaced existing"
@@ -86,9 +87,12 @@ def render_projects(routes: RouteData) -> None:
         projects = projects[projects["year"] == year]
     projects = projects[projects["kind"].isin(kinds)]
 
-    st.dataframe(
-        projects.sort_values("length_miles", ascending=False),
+    projects = projects.sort_values("length_miles", ascending=False)
+    event = st.dataframe(
+        projects,
         hide_index=True,
+        on_select="rerun",
+        selection_mode="single-row",
         column_order=["year", "street", "boro", "facility", "replaced", "length_miles"],
         column_config={
             "year": st.column_config.NumberColumn("Year", format="%d"),
@@ -99,6 +103,38 @@ def render_projects(routes: RouteData) -> None:
             "length_miles": st.column_config.NumberColumn("Miles", format="%.2f"),
         },
     )
+
+    if event.selection.rows:
+        project = projects.iloc[event.selection.rows[0]]
+        render_features_map(get_project_features(routes, project))
+    else:
+        st.caption("Select a row to see it on a map.")
+
+
+def get_project_features(routes: RouteData, project: pd.Series) -> list[dict]:
+    """The map routes that make up a row of the projects table."""
+
+    def is_in_project(properties: dict) -> bool:
+        replaced = properties["replaced_facilitycl"]
+        return (
+            properties["instdate"][:4] == str(project["year"])
+            and properties["street"] == project["street"]
+            and BOROUGHS.get(properties["boro"]) == project["boro"]
+            and get_facility_label(normalize_facility_code(properties["facilitycl"]))
+            == project["facility"]
+            and (
+                get_facility_label(normalize_facility_code(replaced))
+                if replaced
+                else ""
+            )
+            == project["replaced"]
+        )
+
+    return [
+        feature
+        for feature in routes.map_routes["features"]
+        if feature["properties"]["instdate"] and is_in_project(feature["properties"])
+    ]
 
 
 def render_cumulative_miles(routes: RouteData) -> None:
