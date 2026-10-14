@@ -530,6 +530,8 @@ data = [
     { name = "httpx" },
 ]
 dev = [
+    { name = "geopandas" },
+    { name = "httpx" },
     { name = "pandas-stubs" },
     { name = "pytest" },
     { name = "watchdog" },
@@ -550,6 +552,8 @@ data = [
     { name = "httpx", specifier = ">=0.28.1" },
 ]
 dev = [
+    { name = "geopandas", specifier = ">=1.2.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "pandas-stubs", specifier = ">=3.0.3.260530" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "watchdog", specifier = ">=6.0.0" },

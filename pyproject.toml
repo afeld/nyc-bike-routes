@@ -17,6 +17,7 @@ data = [
     "httpx>=0.28.1",
 ]
 dev = [
+    { include-group = "data" },
     "pandas-stubs>=3.0.3.260530",
     "pytest>=9.1.1",
     "watchdog>=6.0.0",
