@@ -517,6 +517,7 @@ name = "nyc-bike-routes"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "altair" },
     { name = "folium" },
     { name = "pandas" },
     { name = "pyarrow" },
@@ -536,6 +537,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "altair", specifier = ">=6.3.0" },
     { name = "folium", specifier = ">=0.20.0" },
     { name = "pandas", specifier = ">=3.0.3" },
     { name = "pyarrow", specifier = ">=24.0.0" },
