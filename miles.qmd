@@ -1,0 +1,30 @@
+---
+title: Miles
+---
+
+```{python}
+from bike_routes.charts import (
+    display_light_and_dark,
+    network_size_chart,
+    yearly_miles_chart,
+)
+from bike_routes.repositories import RouteSnapshotRepository
+
+routes = RouteSnapshotRepository().load()
+```
+
+## Miles added by year
+
+```{python}
+#| renderings: [light, dark]
+display_light_and_dark(yearly_miles_chart(routes))
+```
+
+## Network size
+
+```{python}
+#| renderings: [light, dark]
+display_light_and_dark(network_size_chart(routes))
+```
+
+{{< include _footer.qmd >}}

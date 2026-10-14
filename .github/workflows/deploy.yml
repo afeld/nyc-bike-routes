@@ -30,9 +30,9 @@ jobs:
         with:
           ref: main
       - uses: astral-sh/setup-uv@v10.3.0
-      - run: uv run python -m bike_routes.build_site
+      - run: uv run quarto render
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: site
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v5

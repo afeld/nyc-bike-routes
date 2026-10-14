@@ -1,5 +1,6 @@
 import altair as alt
 import pandas as pd
+from IPython.display import display
 
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
@@ -130,14 +131,19 @@ def mayors_chart(mayors: pd.DataFrame) -> alt.Chart:
     )
 
 
+def _years(dates: pd.Series) -> pd.Series:
+    """Blank where unknown, such as the end of the current mayor's term."""
+    return dates.dt.year.astype("Int64").astype("string").fillna("")
+
+
 def top_installers_table(mayors: pd.DataFrame) -> pd.DataFrame:
     return (
         mayors[["full_name", "start_date", "end_date", "miles_installed"]]
         .sort_values("miles_installed", ascending=False)
         .assign(
             # years only
-            start_date=mayors["start_date"].dt.year.astype("Int64"),
-            end_date=mayors["end_date"].dt.year.astype("Int64"),
+            start_date=_years(mayors["start_date"]),
+            end_date=_years(mayors["end_date"]),
             miles_installed=mayors["miles_installed"].round(1),
         )
         .rename(
@@ -149,3 +155,11 @@ def top_installers_table(mayors: pd.DataFrame) -> pd.DataFrame:
             }
         )
     )
+
+
+def display_light_and_dark(chart: alt.Chart) -> None:
+    """Outputs a light and a dark version of the chart, for a Quarto cell with `renderings: [light, dark]` to switch between."""
+
+    display(chart)
+    with alt.theme.enable("dark"):
+        display(chart.configure(background="transparent"))
