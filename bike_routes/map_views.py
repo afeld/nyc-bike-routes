@@ -46,6 +46,21 @@ def get_map_style_html() -> str:
                 font-size: 1.5rem;
                 font-weight: bold;
             }
+
+            /* they're hard to tap on phones, and the slider does the same thing */
+            .leaflet-timeline-control .button-container :is(.prev, .next) {
+                display: none;
+            }
+            /* big enough to tap, overriding the plugin's styles that are added later */
+            .leaflet-container .leaflet-control.leaflet-timeline-control .button-container button {
+                width: 40px;
+                height: 40px;
+            }
+            /* the plugin draws the icons with borders, which Bootstrap's sizing squashes, e.g. the pause icon's two bars into one */
+            .leaflet-timeline-control .button-container button::before,
+            .leaflet-timeline-control .button-container button::after {
+                box-sizing: content-box;
+            }
         </style>
         """
 
