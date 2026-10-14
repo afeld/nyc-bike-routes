@@ -16,3 +16,11 @@
    ```sh
    uv run streamlit run app.py
    ```
+
+## Testing
+
+Run each page of the app and check for errors:
+
+```sh
+uv run pytest
+```
