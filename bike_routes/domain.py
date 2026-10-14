@@ -9,8 +9,6 @@ class RouteData:
     temporal: pd.DataFrame
     # GeoJSON FeatureCollection
     map_routes: dict[str, Any]
-    center_lat: float
-    center_lon: float
     earliest: pd.Timestamp
     latest: pd.Timestamp
     dataset_last_updated: pd.Timestamp

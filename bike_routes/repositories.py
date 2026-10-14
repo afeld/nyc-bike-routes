@@ -38,8 +38,6 @@ class RouteSnapshotRepository:
         return RouteData(
             temporal=temporal,
             map_routes=map_routes,
-            center_lat=metadata["center_lat"],
-            center_lon=metadata["center_lon"],
             earliest=earliest,
             latest=latest,
             dataset_last_updated=pd.Timestamp(metadata["dataset_last_updated"]),

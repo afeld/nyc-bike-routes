@@ -174,14 +174,6 @@ class RouteRepository:
         )
         return simplified
 
-    def get_map_center(self, projected: GeoDataFrame) -> tuple[float, float]:
-        projected_centroids = GeoDataFrame(
-            geometry=projected.geometry.centroid,
-            crs=projected.crs,
-        ).to_crs(epsg=4326)
-        center = projected_centroids.geometry.union_all().centroid
-        return center.y, center.x
-
     def save_snapshot(self, data_dir: Path = DATA_DIR) -> None:
         geojson = self.fetch_geojson(self.data_url, timeout=30.0)
         metadata = self.fetch_geojson(self.metadata_url)
@@ -195,7 +187,6 @@ class RouteRepository:
         for column in MAP_DATE_COLUMNS:
             map_routes[column] = map_routes[column].dt.strftime("%Y-%m-%d")
         dataset_last_updated = self.fetch_dataset_last_updated(metadata)
-        center_lat, center_lon = self.get_map_center(projected)
         earliest, _ = RouteSnapshotRepository().get_route_date_range(temporal)
         mayors = MayorRepository().load(earliest, dataset_last_updated)
 
@@ -209,8 +200,6 @@ class RouteRepository:
                 if pd.notna(dataset_last_updated)
                 else None
             ),
-            "center_lat": center_lat,
-            "center_lon": center_lon,
         }
         (data_dir / METADATA_FILE).write_text(
             json.dumps(snapshot_metadata, indent=2) + "\n"
