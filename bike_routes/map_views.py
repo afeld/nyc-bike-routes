@@ -1,7 +1,7 @@
 import folium
-import streamlit as st
 from branca.element import Element
 from folium.plugins.timeline import Timeline, TimelineSlider
+from IPython.display import display
 
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
@@ -117,4 +117,6 @@ def render_map(routes: RouteData) -> None:
     # make the date larger
     root.header.add_child(Element(get_map_style_html()))
 
-    st.iframe(map_object.get_root().render(), height=500)
+    # a fixed height, rather than folium's default aspect ratio, which is too short on narrow screens
+    root.height = 500
+    display(map_object)

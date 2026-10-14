@@ -11,10 +11,10 @@
    uv sync
    ```
 
-1. Run the Streamlit app.
+1. Preview the [Quarto](https://quarto.org/) site, which re-renders as you edit. A [GitHub Action](.github/workflows/deploy.yml) deploys it to GitHub Pages.
 
    ```sh
-   uv run streamlit run app.py
+   uv run quarto preview
    ```
 
 ## Data
@@ -27,8 +27,9 @@ uv run --group data python -m bike_routes.update_data
 
 ## Testing
 
-Run each page of the app and check for errors:
+Render the site and check each page for errors in a headless browser, which you install once:
 
 ```sh
+uv run playwright install chromium
 uv run pytest
 ```

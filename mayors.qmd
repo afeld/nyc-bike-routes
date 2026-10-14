@@ -1,0 +1,25 @@
+---
+title: Mayoral administrations
+---
+
+This compares route miles that were installed during each administration window. Mayor information from [Wikidata](https://www.wikidata.org/).
+
+```{python}
+from bike_routes.data import load_routes
+from bike_routes.views import render_mayors, render_top_installers
+
+routes = load_routes()
+```
+
+```{python}
+#| renderings: [light, dark]
+render_mayors(routes)
+```
+
+## Top installers
+
+```{python}
+render_top_installers(routes)
+```
+
+{{< include _footer.qmd >}}

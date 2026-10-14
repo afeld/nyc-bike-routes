@@ -1,0 +1,30 @@
+project:
+  type: website
+  output-dir: _site
+  # only the pages, not the README
+  render:
+    - index.qmd
+    - miles.qmd
+    - mayors.qmd
+
+website:
+  title: "NYC bike routes over time"
+  search: false
+  navbar:
+    left:
+      - href: index.qmd
+        text: Map
+      - href: miles.qmd
+        text: Miles
+      - href: mayors.qmd
+        text: Mayors
+
+format:
+  html:
+    theme:
+      light: flatly
+      dark: darkly
+
+execute:
+  echo: false
+  warning: false

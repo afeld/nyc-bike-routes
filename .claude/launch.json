@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "streamlit",
+      "name": "quarto",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "streamlit", "run", "app.py", "--server.headless", "true", "--server.port", "8501"],
+      "runtimeArgs": ["run", "quarto", "preview", "--port", "8501", "--no-browser"],
       "port": 8501
     }
   ]
