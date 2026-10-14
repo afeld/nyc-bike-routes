@@ -1,9 +1,12 @@
 from html import escape
+from typing import cast
 
 import folium
 import streamlit as st
-from branca.element import Element
+from branca.element import Element, Figure
+from folium.plugins import Fullscreen
 from folium.plugins.timeline import Timeline, TimelineSlider
+from folium.utilities import TypeBounds
 
 from bike_routes.domain import RouteData
 from bike_routes.facilities import (
@@ -20,6 +23,11 @@ def get_layer_name(facility_code: str) -> str:
         f'<span class="swatch" style="color: {get_facility_color(facility_code)};">'
         f"&#9632;</span> {get_facility_label(facility_code)}"
     )
+
+
+def get_bounds(map_object: folium.Map) -> TypeBounds:
+    # the bounds are only missing when the map is empty
+    return cast(TypeBounds, map_object.get_bounds())
 
 
 def get_map_style_html() -> str:
@@ -73,7 +81,7 @@ def render_map(routes: RouteData) -> None:
     # keep the base map out of the layer control
     folium.TileLayer("Esri.WorldGrayCanvas", control=False).add_to(map_object)
 
-    folium.plugins.Fullscreen(
+    Fullscreen(
         position="topleft",
         title="Expand me",
         title_cancel="Exit me",
@@ -115,7 +123,7 @@ def render_map(routes: RouteData) -> None:
 
     # leave room for the timeline slider along the bottom
     map_object.fit_bounds(
-        map_object.get_bounds(),
+        get_bounds(map_object),
         padding_top_left=(10, 10),
         padding_bottom_right=(10, 80),
     )
@@ -123,6 +131,7 @@ def render_map(routes: RouteData) -> None:
     folium.LayerControl(position="topright", collapsed=False).add_to(map_object)
 
     root = map_object.get_root()
+    assert isinstance(root, Figure)
 
     # make the date larger
     root.header.add_child(Element(get_map_style_html()))
@@ -143,6 +152,6 @@ def render_features_map(features: list[dict]) -> None:
             "opacity": 0.9,
         },
     ).add_to(map_object)
-    map_object.fit_bounds(map_object.get_bounds(), padding=(20, 20))
+    map_object.fit_bounds(get_bounds(map_object), padding=(20, 20))
 
     st.iframe(map_object.get_root().render(), height=400)

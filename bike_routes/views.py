@@ -147,14 +147,18 @@ def render_cumulative_miles(routes: RouteData) -> None:
         st.warning(f"Excluding routes with unknown facility types: {unknown_list}")
 
     year_starts = pd.date_range(routes.earliest, routes.latest, freq="YS")
-    stacked_miles = pd.DataFrame(
-        {
-            year: routes.existing_at(year)
-            .groupby(facility_codes)["length_miles"]
-            .sum()
-            for year in year_starts
-        }
-    ).T.reindex(columns=FACILITY_ORDER).fillna(0)
+    stacked_miles = (
+        pd.DataFrame(
+            {
+                year: routes.existing_at(year)
+                .groupby(facility_codes)["length_miles"]
+                .sum()
+                for year in year_starts
+            }
+        )
+        .T.reindex(columns=FACILITY_ORDER)
+        .fillna(0)
+    )
     stacked_miles.columns = [get_facility_label(code) for code in FACILITY_ORDER]
     labels = stacked_miles.columns.tolist()
 

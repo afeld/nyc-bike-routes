@@ -20,6 +20,8 @@ dev = [
     { include-group = "data" },
     "pandas-stubs>=3.0.3.260530",
     "pytest>=9.1.1",
+    "types-geopandas>=1.1.4.20261006",
+    "types-shapely>=2.1.0.20260728",
     "watchdog>=6.0.0",
 ]
 

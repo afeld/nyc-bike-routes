@@ -76,8 +76,8 @@ def pair_with_retired_routes(
         }
     )
     pairs["gap"] = abs(
-        temporal["instdate"].loc[pairs["new"]].values
-        - temporal["ret_date"].loc[pairs["old"]].values
+        temporal["instdate"].loc[pairs["new"]].to_numpy()
+        - temporal["ret_date"].loc[pairs["old"]].to_numpy()
     )
     return pairs[(pairs["new"] != pairs["old"]) & (pairs["gap"] <= REPLACEMENT_WINDOW)]
 
@@ -91,16 +91,16 @@ def get_overlap(
         .dissolve(by="new")
         .geometry
     )
-    new_routes = routes.loc[retired_nearby.index]
+    new_routes = GeoSeries(routes.loc[retired_nearby.index])
     return new_routes.intersection(retired_nearby).length / new_routes.length
 
 
 def choose_closest(routes: GeoSeries, pairs: pd.DataFrame) -> pd.DataFrame:
     """If multiple routes were retired around when a new one was installed, use the closest in time, then the closest in shape."""
     distance = (
-        routes.loc[pairs["new"]]
-        .hausdorff_distance(routes.loc[pairs["old"]], align=False)
-        .values
+        GeoSeries(routes.loc[pairs["new"]])
+        .hausdorff_distance(GeoSeries(routes.loc[pairs["old"]]), align=False)
+        .to_numpy()
     )
     return (
         pairs.assign(distance=distance)
@@ -197,15 +197,9 @@ class RouteRepository:
         metadata_updated_unix = metadata.get("rowsUpdatedAt") or metadata.get(
             "viewLastModified"
         )
-        dataset_last_updated = pd.to_datetime(
-            metadata_updated_unix,
-            unit="s",
-            errors="coerce",
-            utc=True,
-        )
-        if pd.notna(dataset_last_updated):
-            return dataset_last_updated.tz_convert(None)
-        return dataset_last_updated
+        if metadata_updated_unix is None:
+            return pd.Timestamp("NaT")
+        return pd.Timestamp(metadata_updated_unix, unit="s", tz="UTC").tz_convert(None)
 
     def prepare_temporal_routes(self, raw: GeoDataFrame) -> GeoDataFrame:
         temporal = raw.copy()
