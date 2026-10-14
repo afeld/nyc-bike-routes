@@ -15,7 +15,7 @@ from bike_routes.facilities import (
     get_facility_label,
     normalize_facility_code,
 )
-from bike_routes.maps.base import Basemap, get_bounds
+from bike_routes.maps.base import add_basemap, get_bounds
 from bike_routes.maps.popups import get_popup_html
 
 STYLE_PATH = Path(__file__).with_name("route_map.css")
@@ -66,7 +66,7 @@ def render_map(routes: RouteData) -> None:
 
     # allow half zoom levels, so the routes fill narrow screens rather than being zoomed out by a whole level
     map_object = folium.Map(tiles=None, zoom_snap=0.5)
-    Basemap().add_to(map_object)
+    add_basemap(map_object)
 
     Fullscreen(
         position="topleft",
