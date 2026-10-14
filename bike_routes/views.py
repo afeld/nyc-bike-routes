@@ -83,21 +83,14 @@ def render_mayors(routes: RouteData) -> None:
 
     st.subheader("Top installers")
 
-    display_df = (
-        mayor_df[["full_name", "start_date", "end_date", "miles_installed"]]
-        .sort_values("miles_installed", ascending=False)
-        .assign(
-            # years only
-            start_date=mayor_df["start_date"].dt.year,
-            end_date=mayor_df["end_date"].dt.year,
-        )
-        .rename(
-            columns={
-                "full_name": "Name",
-                "start_date": "Term start",
-                "end_date": "Term end",
-                "miles_installed": "Miles installed",
-            }
-        )
+    st.dataframe(
+        mayor_df.sort_values("miles_installed", ascending=False),
+        hide_index=True,
+        column_order=["full_name", "start_date", "end_date", "miles_installed"],
+        column_config={
+            "full_name": "Name",
+            "start_date": st.column_config.DateColumn("Term start", format="YYYY"),
+            "end_date": st.column_config.DateColumn("Term end", format="YYYY"),
+            "miles_installed": "Miles installed",
+        },
     )
-    st.dataframe(display_df.reset_index(drop=True), hide_index=True)
