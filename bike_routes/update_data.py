@@ -29,8 +29,12 @@ WIKIDATA_URL = "https://query.wikidata.org/sparql"
 DATE_COLUMNS = [":created_at", "ret_date", "instdate"]
 MAP_SIMPLIFY_TOLERANCE_FEET = 30.0
 MAP_COORDINATE_PRECISION_DEGREES = 1e-5
-# How far apart a retirement and an installation on the same street segment can be, for the new facility to count as replacing the old one.
+# How far apart a retirement and an installation in the same place can be, for the new facility to count as replacing the old one.
 REPLACEMENT_WINDOW = pd.Timedelta(days=60)
+# How close a retired route needs to be to a new one to count as in the same place, allowing for the lines being drawn on different sides of the street.
+REPLACEMENT_DISTANCE_FEET = 50.0
+# How much of a new route needs to be in the same place as retired ones, for it to count as replacing them.
+REPLACEMENT_MIN_OVERLAP = 0.8
 # The data spells street types inconsistently, e.g. "PARK AV" and "PARK AVENUE".
 STREET_TYPE_ABBREVIATIONS = {
     "AVENUE": "AV",
@@ -168,24 +172,52 @@ class RouteRepository:
         return temporal
 
     def find_replaced_facilities(self, temporal: pd.DataFrame) -> pd.Series:
-        """The facility class that each route replaced, i.e. the one retired from the same street segment around when the route was installed. Missing for routes that were new."""
+        """The facility class that each route replaced, i.e. the one retired from the same place around when the route was installed. Missing for routes that were new.
+
+        This matches on location rather than street segment IDs, since a street is sometimes split into different segments when it's redone."""
+        # in feet
+        projected = temporal.to_crs(epsg=2263)
+        retired = projected.loc[
+            projected["ret_date"].notna(), ["ret_date", "facilitycl", "geometry"]
+        ]
+        retired["geometry"] = retired.buffer(REPLACEMENT_DISTANCE_FEET)
         pairs = (
-            temporal[["segmentid", "instdate"]]
+            projected[["instdate", "geometry"]]
             .reset_index(names="new")
-            .merge(
-                temporal.loc[
-                    temporal["ret_date"].notna(),
-                    ["segmentid", "ret_date", "facilitycl"],
-                ].reset_index(names="old"),
-                on="segmentid",
-            )
+            .sjoin(retired.reset_index(names="old"), predicate="intersects")
         )
         pairs["gap"] = (pairs["instdate"] - pairs["ret_date"]).abs()
         pairs = pairs[
             (pairs["new"] != pairs["old"]) & (pairs["gap"] <= REPLACEMENT_WINDOW)
         ]
-        # if multiple were retired around then, use the closest
-        replaced = pairs.sort_values("gap").drop_duplicates("new").set_index("new")
+
+        # how much of each new route is covered by the ones retired around then, which may have been split up differently
+        retired_nearby = (
+            GeoDataFrame(
+                {"new": pairs["new"]},
+                geometry=retired.geometry.loc[pairs["old"]].values,
+                crs=retired.crs,
+            )
+            .dissolve(by="new")
+            .geometry
+        )
+        new_routes = projected.geometry.loc[retired_nearby.index]
+        overlap = new_routes.intersection(retired_nearby).length / new_routes.length
+        pairs = pairs[
+            pairs["new"].isin(overlap.index[overlap >= REPLACEMENT_MIN_OVERLAP])
+        ]
+
+        # if multiple were retired around then, use the closest in time, then the closest in shape
+        pairs["distance"] = (
+            projected.geometry.loc[pairs["new"]]
+            .hausdorff_distance(projected.geometry.loc[pairs["old"]], align=False)
+            .values
+        )
+        replaced = (
+            pairs.sort_values(["gap", "distance"])
+            .drop_duplicates("new")
+            .set_index("new")
+        )
         return replaced["facilitycl"].reindex(temporal.index)
 
     def project_routes_with_lengths(self, temporal: GeoDataFrame) -> GeoDataFrame:
