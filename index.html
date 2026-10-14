@@ -195,8 +195,14 @@
       const formatMiles = (miles) =>
         miles.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-      async function renderMap(metadata) {
+      async function renderMap() {
         const routes = await fetchJSON("data/map_routes.geojson");
+        // routes that haven't been removed are shown through the latest date in the data
+        const latest = routes.features
+          .flatMap((feature) => [feature.properties.instdate, feature.properties.ret_date])
+          .filter(Boolean)
+          .sort()
+          .at(-1);
 
         const map = L.map("map", { fullscreenControl: true });
         // fit to all of the routes, leaving room for the timeline slider along the bottom
@@ -220,7 +226,7 @@
             {
               getInterval: (feature) => ({
                 start: Date.parse(feature.properties.instdate),
-                end: Date.parse(feature.properties.ret_date ?? metadata.latest),
+                end: Date.parse(feature.properties.ret_date ?? latest),
               }),
               style: { color: type.color, weight: 3, opacity: 0.9 },
             },
@@ -241,17 +247,15 @@
         slider.play();
       }
 
-      const yearAxis = { field: "year", type: "quantitative", title: "Year", axis: { format: "d" } };
-
       const yearlyMilesSpec = {
         data: { url: "data/yearly_miles.json" },
         mark: { type: "line", point: true },
         encoding: {
-          x: yearAxis,
-          y: { field: "miles", type: "quantitative", title: "Miles added" },
+          x: { field: "Year", type: "quantitative", axis: { format: "d" } },
+          y: { field: "Miles added", type: "quantitative" },
           tooltip: [
-            { field: "year", title: "Year" },
-            { field: "miles", title: "Miles added", format: ",.1f" },
+            { field: "Year" },
+            { field: "Miles added", format: ",.1f" },
           ],
         },
         width: "container",
@@ -259,11 +263,13 @@
       };
 
       const networkSizeSpec = {
-        data: { url: "data/network_size.json" },
+        data: { url: "data/cumulative_miles.json" },
         transform: [
+          // one column per type, keyed by its label
+          { fold: FACILITY_TYPES.map((type) => type.label), as: ["label", "miles"] },
           {
-            lookup: "type",
-            from: { data: { values: FACILITY_TYPES }, key: "code", fields: ["label", "order"] },
+            lookup: "label",
+            from: { data: { values: FACILITY_TYPES }, key: "label", fields: ["order"] },
           },
           { filter: { param: "visible" } },
         ],
@@ -278,7 +284,7 @@
         ],
         mark: "area",
         encoding: {
-          x: yearAxis,
+          x: { field: "year", type: "temporal", title: "Year" },
           y: { field: "miles", type: "quantitative", title: "Miles", stack: true },
           color: {
             field: "label",
@@ -293,7 +299,7 @@
           },
           order: { field: "order", type: "quantitative" },
           tooltip: [
-            { field: "year", title: "Year" },
+            { field: "year", type: "temporal", title: "Year", format: "%Y" },
             { field: "label", title: "Type" },
             { field: "miles", title: "Miles", format: ",.1f" },
           ],
@@ -303,11 +309,11 @@
       };
 
       const mayorsSpec = {
-        data: { url: "data/mayors.json" },
+        data: { url: "data/mayor_miles.json" },
         transform: [{ calculate: "toDate(datum.start_date)", as: "start" }],
         mark: "bar",
         encoding: {
-          x: { field: "miles", type: "quantitative", title: "Miles installed" },
+          x: { field: "miles_installed", type: "quantitative", title: "Miles installed" },
           y: {
             field: "full_name",
             type: "nominal",
@@ -316,7 +322,7 @@
           },
           tooltip: [
             { field: "full_name", title: "Mayor" },
-            { field: "miles", title: "Miles installed", format: ",.1f" },
+            { field: "miles_installed", title: "Miles installed", format: ",.1f" },
           ],
         },
         width: "container",
@@ -324,16 +330,16 @@
       };
 
       async function renderTopInstallers() {
-        const mayors = await fetchJSON("data/mayors.json");
+        const mayors = await fetchJSON("data/mayor_miles.json");
         const rows = mayors
-          .toSorted((a, b) => b.miles - a.miles)
+          .toSorted((a, b) => b.miles_installed - a.miles_installed)
           .map((mayor) => {
             const row = document.createElement("tr");
             for (const value of [
               mayor.full_name,
               mayor.start_date?.slice(0, 4) ?? "",
               mayor.end_date?.slice(0, 4) ?? "",
-              formatMiles(mayor.miles),
+              formatMiles(mayor.miles_installed),
             ]) {
               row.insertCell().textContent = value;
             }
@@ -349,7 +355,7 @@
 
         const embedOptions = { actions: false };
         await Promise.all([
-          renderMap(metadata),
+          renderMap(),
           vegaEmbed("#yearly-miles", yearlyMilesSpec, embedOptions),
           vegaEmbed("#network-size", networkSizeSpec, embedOptions),
           vegaEmbed("#mayors-chart", mayorsSpec, embedOptions),

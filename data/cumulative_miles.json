@@ -1,0 +1,926 @@
+[
+ {
+  "year":"1895-01-01T00:00:00.000",
+  "Protected (I)":4.86,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":0.0,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1896-01-01T00:00:00.000",
+  "Protected (I)":4.86,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":0.0,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1897-01-01T00:00:00.000",
+  "Protected (I)":4.86,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":0.0,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1898-01-01T00:00:00.000",
+  "Protected (I)":4.86,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":0.0,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1899-01-01T00:00:00.000",
+  "Protected (I)":4.86,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":0.0,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1900-01-01T00:00:00.000",
+  "Protected (I)":4.86,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":0.0,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1901-01-01T00:00:00.000",
+  "Protected (I)":15.63,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.15,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1902-01-01T00:00:00.000",
+  "Protected (I)":15.63,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.15,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1903-01-01T00:00:00.000",
+  "Protected (I)":15.63,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.15,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1904-01-01T00:00:00.000",
+  "Protected (I)":15.63,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.15,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1905-01-01T00:00:00.000",
+  "Protected (I)":15.63,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1906-01-01T00:00:00.000",
+  "Protected (I)":15.63,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1907-01-01T00:00:00.000",
+  "Protected (I)":15.63,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1908-01-01T00:00:00.000",
+  "Protected (I)":15.63,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.0
+ },
+ {
+  "year":"1909-01-01T00:00:00.000",
+  "Protected (I)":15.63,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.31
+ },
+ {
+  "year":"1910-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.31
+ },
+ {
+  "year":"1911-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1912-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1913-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1914-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1915-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1916-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1917-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1918-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1919-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1920-01-01T00:00:00.000",
+  "Protected (I)":18.44,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.91
+ },
+ {
+  "year":"1921-01-01T00:00:00.000",
+  "Protected (I)":20.13,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1922-01-01T00:00:00.000",
+  "Protected (I)":20.13,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1923-01-01T00:00:00.000",
+  "Protected (I)":20.13,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1924-01-01T00:00:00.000",
+  "Protected (I)":21.91,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1925-01-01T00:00:00.000",
+  "Protected (I)":21.91,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1926-01-01T00:00:00.000",
+  "Protected (I)":21.91,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1927-01-01T00:00:00.000",
+  "Protected (I)":21.91,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1928-01-01T00:00:00.000",
+  "Protected (I)":21.91,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1929-01-01T00:00:00.000",
+  "Protected (I)":21.91,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1930-01-01T00:00:00.000",
+  "Protected (I)":21.91,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1931-01-01T00:00:00.000",
+  "Protected (I)":21.91,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1932-01-01T00:00:00.000",
+  "Protected (I)":21.91,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1933-01-01T00:00:00.000",
+  "Protected (I)":23.07,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1934-01-01T00:00:00.000",
+  "Protected (I)":23.07,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1935-01-01T00:00:00.000",
+  "Protected (I)":23.07,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1936-01-01T00:00:00.000",
+  "Protected (I)":25.88,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":0.92
+ },
+ {
+  "year":"1937-01-01T00:00:00.000",
+  "Protected (I)":30.13,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":2.66
+ },
+ {
+  "year":"1938-01-01T00:00:00.000",
+  "Protected (I)":30.13,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":2.66
+ },
+ {
+  "year":"1939-01-01T00:00:00.000",
+  "Protected (I)":33.12,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":2.66
+ },
+ {
+  "year":"1940-01-01T00:00:00.000",
+  "Protected (I)":36.65,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":1.9,
+  "Link (L)":2.66
+ },
+ {
+  "year":"1941-01-01T00:00:00.000",
+  "Protected (I)":38.0,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.66
+ },
+ {
+  "year":"1942-01-01T00:00:00.000",
+  "Protected (I)":54.53,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1943-01-01T00:00:00.000",
+  "Protected (I)":54.53,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1944-01-01T00:00:00.000",
+  "Protected (I)":54.53,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1945-01-01T00:00:00.000",
+  "Protected (I)":54.53,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1946-01-01T00:00:00.000",
+  "Protected (I)":54.66,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1947-01-01T00:00:00.000",
+  "Protected (I)":54.66,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1948-01-01T00:00:00.000",
+  "Protected (I)":54.66,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1949-01-01T00:00:00.000",
+  "Protected (I)":54.66,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1950-01-01T00:00:00.000",
+  "Protected (I)":54.66,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1951-01-01T00:00:00.000",
+  "Protected (I)":54.66,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1952-01-01T00:00:00.000",
+  "Protected (I)":55.1,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1953-01-01T00:00:00.000",
+  "Protected (I)":55.1,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":2.82
+ },
+ {
+  "year":"1954-01-01T00:00:00.000",
+  "Protected (I)":56.26,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.61
+ },
+ {
+  "year":"1955-01-01T00:00:00.000",
+  "Protected (I)":56.8,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.61
+ },
+ {
+  "year":"1956-01-01T00:00:00.000",
+  "Protected (I)":57.25,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.61
+ },
+ {
+  "year":"1957-01-01T00:00:00.000",
+  "Protected (I)":57.25,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.61
+ },
+ {
+  "year":"1958-01-01T00:00:00.000",
+  "Protected (I)":57.25,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.61
+ },
+ {
+  "year":"1959-01-01T00:00:00.000",
+  "Protected (I)":57.25,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.61
+ },
+ {
+  "year":"1960-01-01T00:00:00.000",
+  "Protected (I)":57.25,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.61
+ },
+ {
+  "year":"1961-01-01T00:00:00.000",
+  "Protected (I)":57.25,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.95
+ },
+ {
+  "year":"1962-01-01T00:00:00.000",
+  "Protected (I)":57.25,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.95
+ },
+ {
+  "year":"1963-01-01T00:00:00.000",
+  "Protected (I)":57.51,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.95
+ },
+ {
+  "year":"1964-01-01T00:00:00.000",
+  "Protected (I)":57.51,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.95
+ },
+ {
+  "year":"1965-01-01T00:00:00.000",
+  "Protected (I)":57.51,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.95
+ },
+ {
+  "year":"1966-01-01T00:00:00.000",
+  "Protected (I)":57.51,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.95
+ },
+ {
+  "year":"1967-01-01T00:00:00.000",
+  "Protected (I)":60.32,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":3.95
+ },
+ {
+  "year":"1968-01-01T00:00:00.000",
+  "Protected (I)":62.55,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1969-01-01T00:00:00.000",
+  "Protected (I)":62.55,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1970-01-01T00:00:00.000",
+  "Protected (I)":62.55,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1971-01-01T00:00:00.000",
+  "Protected (I)":77.51,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1972-01-01T00:00:00.000",
+  "Protected (I)":77.51,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1973-01-01T00:00:00.000",
+  "Protected (I)":77.51,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1974-01-01T00:00:00.000",
+  "Protected (I)":80.55,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1975-01-01T00:00:00.000",
+  "Protected (I)":82.1,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1976-01-01T00:00:00.000",
+  "Protected (I)":82.1,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1977-01-01T00:00:00.000",
+  "Protected (I)":82.1,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1978-01-01T00:00:00.000",
+  "Protected (I)":82.1,
+  "Conventional (II)":0.0,
+  "Shared lane \/ signed route (III)":2.33,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1979-01-01T00:00:00.000",
+  "Protected (I)":82.84,
+  "Conventional (II)":3.1,
+  "Shared lane \/ signed route (III)":2.42,
+  "Link (L)":4.13
+ },
+ {
+  "year":"1980-01-01T00:00:00.000",
+  "Protected (I)":95.93,
+  "Conventional (II)":10.99,
+  "Shared lane \/ signed route (III)":3.79,
+  "Link (L)":4.28
+ },
+ {
+  "year":"1981-01-01T00:00:00.000",
+  "Protected (I)":98.47,
+  "Conventional (II)":20.6,
+  "Shared lane \/ signed route (III)":8.87,
+  "Link (L)":4.28
+ },
+ {
+  "year":"1982-01-01T00:00:00.000",
+  "Protected (I)":98.47,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":8.87,
+  "Link (L)":4.28
+ },
+ {
+  "year":"1983-01-01T00:00:00.000",
+  "Protected (I)":98.47,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":8.87,
+  "Link (L)":4.28
+ },
+ {
+  "year":"1984-01-01T00:00:00.000",
+  "Protected (I)":101.21,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":8.87,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1985-01-01T00:00:00.000",
+  "Protected (I)":101.21,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":8.87,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1986-01-01T00:00:00.000",
+  "Protected (I)":101.21,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":8.87,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1987-01-01T00:00:00.000",
+  "Protected (I)":102.79,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":8.87,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1988-01-01T00:00:00.000",
+  "Protected (I)":105.82,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":9.09,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1989-01-01T00:00:00.000",
+  "Protected (I)":106.21,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":9.09,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1990-01-01T00:00:00.000",
+  "Protected (I)":106.34,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":9.09,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1991-01-01T00:00:00.000",
+  "Protected (I)":109.23,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":9.09,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1992-01-01T00:00:00.000",
+  "Protected (I)":109.23,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":9.09,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1993-01-01T00:00:00.000",
+  "Protected (I)":109.23,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":9.3,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1994-01-01T00:00:00.000",
+  "Protected (I)":109.23,
+  "Conventional (II)":22.0,
+  "Shared lane \/ signed route (III)":9.3,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1995-01-01T00:00:00.000",
+  "Protected (I)":109.47,
+  "Conventional (II)":22.54,
+  "Shared lane \/ signed route (III)":9.3,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1996-01-01T00:00:00.000",
+  "Protected (I)":109.47,
+  "Conventional (II)":22.54,
+  "Shared lane \/ signed route (III)":9.3,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1997-01-01T00:00:00.000",
+  "Protected (I)":111.38,
+  "Conventional (II)":25.88,
+  "Shared lane \/ signed route (III)":9.48,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1998-01-01T00:00:00.000",
+  "Protected (I)":111.38,
+  "Conventional (II)":49.75,
+  "Shared lane \/ signed route (III)":9.92,
+  "Link (L)":5.04
+ },
+ {
+  "year":"1999-01-01T00:00:00.000",
+  "Protected (I)":116.63,
+  "Conventional (II)":51.5,
+  "Shared lane \/ signed route (III)":17.3,
+  "Link (L)":5.04
+ },
+ {
+  "year":"2000-01-01T00:00:00.000",
+  "Protected (I)":124.13,
+  "Conventional (II)":53.44,
+  "Shared lane \/ signed route (III)":17.41,
+  "Link (L)":5.12
+ },
+ {
+  "year":"2001-01-01T00:00:00.000",
+  "Protected (I)":129.77,
+  "Conventional (II)":56.77,
+  "Shared lane \/ signed route (III)":27.93,
+  "Link (L)":5.12
+ },
+ {
+  "year":"2002-01-01T00:00:00.000",
+  "Protected (I)":138.42,
+  "Conventional (II)":66.73,
+  "Shared lane \/ signed route (III)":31.48,
+  "Link (L)":5.71
+ },
+ {
+  "year":"2003-01-01T00:00:00.000",
+  "Protected (I)":139.62,
+  "Conventional (II)":74.8,
+  "Shared lane \/ signed route (III)":36.68,
+  "Link (L)":8.05
+ },
+ {
+  "year":"2004-01-01T00:00:00.000",
+  "Protected (I)":145.76,
+  "Conventional (II)":103.91,
+  "Shared lane \/ signed route (III)":42.89,
+  "Link (L)":8.05
+ },
+ {
+  "year":"2005-01-01T00:00:00.000",
+  "Protected (I)":148.65,
+  "Conventional (II)":114.05,
+  "Shared lane \/ signed route (III)":44.65,
+  "Link (L)":8.05
+ },
+ {
+  "year":"2006-01-01T00:00:00.000",
+  "Protected (I)":149.96,
+  "Conventional (II)":117.82,
+  "Shared lane \/ signed route (III)":45.69,
+  "Link (L)":8.05
+ },
+ {
+  "year":"2007-01-01T00:00:00.000",
+  "Protected (I)":162.93,
+  "Conventional (II)":137.21,
+  "Shared lane \/ signed route (III)":49.66,
+  "Link (L)":8.05
+ },
+ {
+  "year":"2008-01-01T00:00:00.000",
+  "Protected (I)":176.15,
+  "Conventional (II)":178.28,
+  "Shared lane \/ signed route (III)":58.85,
+  "Link (L)":8.05
+ },
+ {
+  "year":"2009-01-01T00:00:00.000",
+  "Protected (I)":184.53,
+  "Conventional (II)":216.69,
+  "Shared lane \/ signed route (III)":71.74,
+  "Link (L)":8.05
+ },
+ {
+  "year":"2010-01-01T00:00:00.000",
+  "Protected (I)":194.17,
+  "Conventional (II)":243.21,
+  "Shared lane \/ signed route (III)":81.87,
+  "Link (L)":8.05
+ },
+ {
+  "year":"2011-01-01T00:00:00.000",
+  "Protected (I)":199.01,
+  "Conventional (II)":254.31,
+  "Shared lane \/ signed route (III)":91.54,
+  "Link (L)":8.07
+ },
+ {
+  "year":"2012-01-01T00:00:00.000",
+  "Protected (I)":202.79,
+  "Conventional (II)":257.35,
+  "Shared lane \/ signed route (III)":95.25,
+  "Link (L)":8.08
+ },
+ {
+  "year":"2013-01-01T00:00:00.000",
+  "Protected (I)":210.23,
+  "Conventional (II)":258.48,
+  "Shared lane \/ signed route (III)":111.67,
+  "Link (L)":8.08
+ },
+ {
+  "year":"2014-01-01T00:00:00.000",
+  "Protected (I)":221.37,
+  "Conventional (II)":274.85,
+  "Shared lane \/ signed route (III)":131.15,
+  "Link (L)":9.45
+ },
+ {
+  "year":"2015-01-01T00:00:00.000",
+  "Protected (I)":223.12,
+  "Conventional (II)":283.42,
+  "Shared lane \/ signed route (III)":149.37,
+  "Link (L)":9.45
+ },
+ {
+  "year":"2016-01-01T00:00:00.000",
+  "Protected (I)":235.52,
+  "Conventional (II)":297.66,
+  "Shared lane \/ signed route (III)":163.62,
+  "Link (L)":9.97
+ },
+ {
+  "year":"2017-01-01T00:00:00.000",
+  "Protected (I)":246.08,
+  "Conventional (II)":330.24,
+  "Shared lane \/ signed route (III)":171.18,
+  "Link (L)":10.03
+ },
+ {
+  "year":"2018-01-01T00:00:00.000",
+  "Protected (I)":266.94,
+  "Conventional (II)":355.6,
+  "Shared lane \/ signed route (III)":168.6,
+  "Link (L)":11.93
+ },
+ {
+  "year":"2019-01-01T00:00:00.000",
+  "Protected (I)":292.57,
+  "Conventional (II)":371.23,
+  "Shared lane \/ signed route (III)":169.51,
+  "Link (L)":11.99
+ },
+ {
+  "year":"2020-01-01T00:00:00.000",
+  "Protected (I)":319.46,
+  "Conventional (II)":397.73,
+  "Shared lane \/ signed route (III)":176.5,
+  "Link (L)":12.2
+ },
+ {
+  "year":"2021-01-01T00:00:00.000",
+  "Protected (I)":344.44,
+  "Conventional (II)":424.7,
+  "Shared lane \/ signed route (III)":183.98,
+  "Link (L)":12.0
+ },
+ {
+  "year":"2022-01-01T00:00:00.000",
+  "Protected (I)":362.52,
+  "Conventional (II)":440.22,
+  "Shared lane \/ signed route (III)":182.35,
+  "Link (L)":12.0
+ },
+ {
+  "year":"2023-01-01T00:00:00.000",
+  "Protected (I)":382.08,
+  "Conventional (II)":446.1,
+  "Shared lane \/ signed route (III)":177.19,
+  "Link (L)":10.94
+ },
+ {
+  "year":"2024-01-01T00:00:00.000",
+  "Protected (I)":412.63,
+  "Conventional (II)":440.21,
+  "Shared lane \/ signed route (III)":180.89,
+  "Link (L)":10.82
+ },
+ {
+  "year":"2025-01-01T00:00:00.000",
+  "Protected (I)":436.36,
+  "Conventional (II)":449.44,
+  "Shared lane \/ signed route (III)":180.25,
+  "Link (L)":8.48
+ },
+ {
+  "year":"2026-01-01T00:00:00.000",
+  "Protected (I)":442.9,
+  "Conventional (II)":455.33,
+  "Shared lane \/ signed route (III)":180.91,
+  "Link (L)":8.48
+ }
+]
