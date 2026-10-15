@@ -67,3 +67,13 @@
         flex: 1;
     }
 }
+
+/* fade in the routes as the timeline adds them */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+}
+.leaflet-overlay-pane path {
+    animation: fade-in 0.25s;
+}
