@@ -22,6 +22,8 @@ MIN_ZOOM = 9
 MAX_BOUNDS = [[40.4, -74.35], [41.0, -73.6]]
 # above the routes, so they don't cover the street names, but below popups
 LABELS_PANE = "labels"
+# the main map starts at 10 (9.5 on phones), where the labels clutter the routes, so only show them once zoomed in from there
+LABELS_MIN_ZOOM = 11
 
 
 class Basemap(JSCSSMixin):
@@ -36,6 +38,8 @@ class Basemap(JSCSSMixin):
                     const isLabel = (layer) => layer.type === "symbol";
                     const labelLayers = style.layers.filter(isLabel).map((layer) => ({
                         ...layer,
+                        // MapLibre's zoom levels are one less than Leaflet's, since its tiles are twice the size
+                        minzoom: Math.max(layer.minzoom ?? 0, {{ this.labels_min_zoom }} - 1),
                         // halos around the text, so it's readable on top of the routes
                         paint: {
                             ...layer.paint,
@@ -79,6 +83,7 @@ class Basemap(JSCSSMixin):
         self.style_url = STYLE_URL
         self.attribution = ATTRIBUTION
         self.labels_pane = LABELS_PANE
+        self.labels_min_zoom = LABELS_MIN_ZOOM
 
 
 def add_basemap(map_object: folium.Map) -> None:
