@@ -15,7 +15,7 @@ from bike_routes.facilities import (
     get_facility_label,
     normalize_facility_code,
 )
-from bike_routes.maps.base import add_basemap, get_bounds
+from bike_routes.maps.base import add_basemap, get_bounds, remove_unused_assets
 from bike_routes.maps.popups import get_popup_html
 
 STYLE_PATH = Path(__file__).with_name("route_map.css")
@@ -33,7 +33,9 @@ def get_map_style_html() -> str:
     return f"<style>{STYLE_PATH.read_text()}</style>"
 
 
-def render_map(routes: RouteData) -> None:
+# the same for every visitor, so only build it once. Hashing all of the routes is almost as slow as building the map, so key on when they were updated.
+@st.cache_data(hash_funcs={RouteData: lambda routes: routes.dataset_last_updated})
+def get_map_html(routes: RouteData) -> str:
     """Uses the Folium Timeline plugin."""
 
     latest = routes.latest.strftime("%Y-%m-%d")
@@ -66,6 +68,7 @@ def render_map(routes: RouteData) -> None:
 
     # allow half zoom levels, so the routes fill narrow screens rather than being zoomed out by a whole level
     map_object = folium.Map(tiles=None, zoom_snap=0.5)
+    remove_unused_assets(map_object)
     add_basemap(map_object)
 
     Fullscreen(
@@ -118,6 +121,10 @@ def render_map(routes: RouteData) -> None:
     # make the date larger
     root.header.add_child(Element(get_map_style_html()))
 
+    return root.render()
+
+
+def render_map(routes: RouteData) -> None:
     # fill the rest of the screen on phones
     st.html(
         """
@@ -131,4 +138,4 @@ def render_map(routes: RouteData) -> None:
         </style>
         """
     )
-    st.iframe(map_object.get_root().render(), height=500)
+    st.iframe(get_map_html(routes), height=500)

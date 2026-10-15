@@ -3,6 +3,7 @@
 from typing import cast
 
 import folium
+from branca.element import Element, Figure
 from folium.elements import JSCSSMixin
 from folium.map import CustomPane
 from folium.template import Template
@@ -80,6 +81,21 @@ def add_basemap(map_object: folium.Map) -> None:
     # let clicks through to the routes below
     CustomPane(LABELS_PANE, z_index=450).add_to(map_object)
     Basemap().add_to(map_object)
+
+
+def remove_unused_assets(map_object: folium.Map) -> None:
+    """Folium loads jQuery, Bootstrap, Font Awesome, etc. by default, for features these maps don't use. Keep only Leaflet."""
+    map_object.default_js = [
+        (name, url) for name, url in folium.Map.default_js if name == "leaflet"
+    ]
+    map_object.default_css = [
+        (name, url) for name, url in folium.Map.default_css if name == "leaflet_css"
+    ]
+
+    # Bootstrap 3's stylesheet for glyphicons set this, and the sizes on the maps are based on it
+    root = map_object.get_root()
+    assert isinstance(root, Figure)
+    root.header.add_child(Element("<style>html { font-size: 62.5%; }</style>"))
 
 
 def get_bounds(map_object: folium.Map) -> TypeBounds:
