@@ -16,6 +16,8 @@ ATTRIBUTION = (
     '© <a href="https://www.openmaptiles.org/">OpenMapTiles</a> '
     'Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 )
+# all of NYC fits at 9.5 on the narrowest phones, so allow a bit of room around it, but no further. Pass it to folium.Map as minZoom, since its min_zoom only applies to its own tiles.
+MIN_ZOOM = 9
 # above the routes, so they don't cover the street names, but below popups
 LABELS_PANE = "labels"
 

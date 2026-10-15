@@ -2,13 +2,18 @@ import folium
 import streamlit as st
 
 from bike_routes.facilities import get_facility_color
-from bike_routes.maps.base import add_basemap, get_bounds, remove_unused_assets
+from bike_routes.maps.base import (
+    MIN_ZOOM,
+    add_basemap,
+    get_bounds,
+    remove_unused_assets,
+)
 
 
 def render_features_map(features: list[dict]) -> None:
     """A static map of the given routes, zoomed to fit them."""
 
-    map_object = folium.Map(tiles=None)
+    map_object = folium.Map(tiles=None, minZoom=MIN_ZOOM)
     remove_unused_assets(map_object)
     add_basemap(map_object)
     folium.GeoJson(
