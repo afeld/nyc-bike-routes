@@ -3,85 +3,83 @@
 from typing import cast
 
 import folium
-from branca.element import Element, Figure
+from folium.elements import JSCSSMixin
 from folium.map import CustomPane
+from folium.template import Template
 from folium.utilities import TypeBounds
 
-# Free key for NYC's map tiles, from https://api-portal.nyc.gov (the "GeoServer Tile Service User" product). It's visible in the page anyway, since it's part of each tile's URL.
-NYC_API_KEY = "4e037ecaa17d47c8ac52942761633271"
-NYC_TILES_URL = "https://api.nyc.gov/geoserver/gwc/service/tms/1.0.0"
-NYC_ATTRIBUTION = '© <a href="https://www.nyc.gov/">City of New York</a>'
+# OpenFreeMap's minimal style. See https://openfreemap.org/quick_start/.
+STYLE_URL = "https://tiles.openfreemap.org/styles/positron"
+ATTRIBUTION = (
+    '<a href="https://openfreemap.org">OpenFreeMap</a> '
+    '© <a href="https://www.openmaptiles.org/">OpenMapTiles</a> '
+    'Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+)
 # above the routes, so they don't cover the street names, but below popups
 LABELS_PANE = "labels"
 
 
-class Basemap(folium.TileLayer):
-    """NYC's own basemap, with parks, streets, and buildings. See https://finder.nyc.gov/nyc-lib/tiles/."""
+class Basemap(JSCSSMixin):
+    """An OpenStreetMap basemap, drawn in the browser from vector tiles by MapLibre, so it's sharp on high-resolution screens and at half zoom levels. The style is split in two: the labels go in their own pane, above the routes."""
+
+    _template = Template(
+        """
+        {% macro script(this, kwargs) %}
+            fetch({{ this.style_url|tojson }})
+                .then((response) => response.json())
+                .then((style) => {
+                    const isLabel = (layer) => layer.type === "symbol";
+                    const labelLayers = style.layers.filter(isLabel).map((layer) => ({
+                        ...layer,
+                        // halos around the text, so it's readable on top of the routes
+                        paint: {
+                            ...layer.paint,
+                            "text-halo-color": "#fff",
+                            "text-halo-width": 2,
+                        },
+                    }));
+                    L.maplibreGL({
+                        style: { ...style, layers: style.layers.filter((layer) => !isLabel(layer)) },
+                        attribution: {{ this.attribution|tojson }},
+                    }).addTo({{ this._parent.get_name() }});
+                    L.maplibreGL({
+                        style: { ...style, layers: labelLayers },
+                        pane: {{ this.labels_pane|tojson }},
+                    }).addTo({{ this._parent.get_name() }});
+                });
+        {% endmacro %}
+        """
+    )
 
     def __init__(self) -> None:
-        super().__init__(
-            tiles=(
-                f"{NYC_TILES_URL}/carto%3Abasemap@EPSG%3A900913@jpg/{{z}}/{{x}}/{{y}}.jpg"
-                f"?Key={NYC_API_KEY}"
+        super().__init__()
+        # MapLibre 5, since 6 is only published as an ES module, which can't be loaded with a plain script tag like Folium's
+        self.default_js = [
+            (
+                "maplibre-gl",
+                "https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js",
             ),
-            attr=NYC_ATTRIBUTION,
-            name="Basemap",
-            # keep it out of the layer control
-            control=False,
-            tms=True,
-            min_native_zoom=8,
-            max_zoom=19,
-            max_native_zoom=19,
-            # the extent of the tiles
-            bounds=[[39.3682, -75.9374], [42.0329, -71.7187]],
-            # sharper on high-resolution screens, by using tiles from a zoom level further in
-            detect_retina=True,
-        )
-
-
-class Labels(folium.TileLayer):
-    """NYC's labels for the basemap, e.g. street and neighborhood names."""
-
-    def __init__(self) -> None:
-        super().__init__(
-            tiles=(
-                f"{NYC_TILES_URL}/carto%3Alabel@EPSG%3A900913@png8/{{z}}/{{x}}/{{y}}.png8"
-                f"?Key={NYC_API_KEY}"
+            (
+                "maplibre-gl-leaflet",
+                "https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js",
             ),
-            attr=NYC_ATTRIBUTION,
-            name="Labels",
-            control=False,
-            overlay=True,
-            tms=True,
-            max_zoom=19,
-            max_native_zoom=19,
-            # the extent of the tiles
-            bounds=[[40.0341, -74.2727], [41.2919, -71.9101]],
-            pane=LABELS_PANE,
-            # not detect_retina, which would halve the size of the text
-        )
+        ]
+        self.default_css = [
+            (
+                # Folium dedupes scripts and stylesheets by name together
+                "maplibre-gl-css",
+                "https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css",
+            ),
+        ]
+        self.style_url = STYLE_URL
+        self.attribution = ATTRIBUTION
+        self.labels_pane = LABELS_PANE
 
 
 def add_basemap(map_object: folium.Map) -> None:
-    Basemap().add_to(map_object)
     # let clicks through to the routes below
     CustomPane(LABELS_PANE, z_index=450).add_to(map_object)
-    Labels().add_to(map_object)
-
-    # halos around the text, so it's readable on top of the routes
-    root = map_object.get_root()
-    assert isinstance(root, Figure)
-    root.header.add_child(
-        Element(
-            f"""
-            <style>
-                .leaflet-{LABELS_PANE}-pane {{
-                    filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
-                }}
-            </style>
-            """
-        )
-    )
+    Basemap().add_to(map_object)
 
 
 def get_bounds(map_object: folium.Map) -> TypeBounds:
