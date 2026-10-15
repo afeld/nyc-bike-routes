@@ -18,6 +18,8 @@ ATTRIBUTION = (
 )
 # all of NYC fits at 9.5 on the narrowest phones, so allow a bit of room around it, but no further. Pass it to folium.Map as minZoom, since its min_zoom only applies to its own tiles.
 MIN_ZOOM = 9
+# keep the map around NYC, with a bit of room around it. Pass it to folium.Map as maxBounds, like minZoom.
+MAX_BOUNDS = [[40.4, -74.35], [41.0, -73.6]]
 # above the routes, so they don't cover the street names, but below popups
 LABELS_PANE = "labels"
 

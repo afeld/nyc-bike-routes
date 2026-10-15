@@ -16,6 +16,7 @@ from bike_routes.facilities import (
     normalize_facility_code,
 )
 from bike_routes.maps.base import (
+    MAX_BOUNDS,
     MIN_ZOOM,
     add_basemap,
     get_bounds,
@@ -72,7 +73,14 @@ def get_map_html(routes: RouteData) -> str:
         )
 
     # allow half zoom levels, so the routes fill narrow screens rather than being zoomed out by a whole level
-    map_object = folium.Map(tiles=None, zoom_snap=0.5, minZoom=MIN_ZOOM)
+    map_object = folium.Map(
+        tiles=None,
+        zoom_snap=0.5,
+        minZoom=MIN_ZOOM,
+        maxBounds=MAX_BOUNDS,
+        # rather than letting the map be dragged past them and bounce back
+        maxBoundsViscosity=1.0,
+    )
     remove_unused_assets(map_object)
     add_basemap(map_object)
 
